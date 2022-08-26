@@ -2,7 +2,14 @@ package dynamodb
 
 import (
 	"context"
+
+	"github.com/aws/aws-sdk-go/service/dynamodb"
 )
+
+type EntityMarshaler[T any] interface {
+	Marshal() (map[string]*dynamodb.AttributeValue, error)
+	UnMarshal() (T, error)
+}
 
 // KeyType represents the allowed dynamodb types.
 //
@@ -15,9 +22,12 @@ const (
 	Binary
 )
 
+// DBKey custom type for dynamo DB key name
+type DBKey string
+
 // DynamoAttribute represents the data for a dynamodb attribute.
 type DynamoAttribute struct {
-	KeyName   string
+	KeyName   DBKey
 	ValueType KeyType
 	KeyValue  interface{}
 }
@@ -28,20 +38,24 @@ type DynamoPrimaryKey struct {
 	SortKey      *DynamoAttribute
 }
 
-// TableConfig represents a dynamodb table configuration.
-type TableConfig struct {
-	TableName string
-	DynamoPrimaryKey
-}
-
 // Queries ...
-type Queries[T any] interface {
+type Queries[T EntityMarshaler[T]] interface {
 	Get(context.Context, DynamoPrimaryKey) (T, error)
 	GetByIDs(context.Context, []DynamoPrimaryKey) ([]T, error)
 }
 
 // Commands ..
-type Commands[T any] interface {
+type Commands[T EntityMarshaler[T]] interface {
 	Create(context.Context, T) (DynamoPrimaryKey, error)
 	Update(context.Context, DynamoPrimaryKey, []DynamoAttribute) error
+}
+
+type _entity struct{}
+
+func (_entity) Marshal() (map[string]*dynamodb.AttributeValue, error) {
+	panic("unimplemented")
+}
+
+func (_entity) UnMarshal() (_entity, error) {
+	panic("unimplemented")
 }

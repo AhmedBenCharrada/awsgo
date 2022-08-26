@@ -5,12 +5,12 @@ import (
 )
 
 // DynamodbWrapper provides the API methods for interacting with dynamo db
-type DynamodbWrapper[T any] struct {
+type DynamodbWrapper[T EntityMarshaler[T]] struct {
 	dynamodbiface.DynamoDBAPI
 }
 
 // NewDynamoWrapper creates a new dynamo wrapper.
-func NewDynamoWrapper[T any](client dynamodbiface.DynamoDBAPI) *DynamodbWrapper[T] {
+func NewDynamoWrapper[T EntityMarshaler[T]](client dynamodbiface.DynamoDBAPI) *DynamodbWrapper[T] {
 	return &DynamodbWrapper[T]{
 		DynamoDBAPI: client,
 	}

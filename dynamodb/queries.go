@@ -14,4 +14,4 @@ func (*DynamodbWrapper[T]) GetByIDs(context.Context, []DynamoPrimaryKey) ([]T, e
 	panic("unimplemented")
 }
 
-var _ Queries[interface{}] = (*DynamodbWrapper[interface{}])(nil)
+var _ Queries[_entity] = (*DynamodbWrapper[_entity])(nil)

@@ -12,4 +12,4 @@ func (*DynamodbWrapper[T]) Update(context.Context, DynamoPrimaryKey, []DynamoAtt
 	panic("unimplemented")
 }
 
-var _ Commands[interface{}] = (*DynamodbWrapper[interface{}])(nil)
+var _ Commands[_entity] = (*DynamodbWrapper[_entity])(nil)

@@ -1,15 +1,17 @@
 package dynamodb
 
-import "context"
+import (
+	"context"
+)
 
 // Create implements Commands
-func (*DynamodbWrapper[T]) Create(context.Context, T) (DynamoPrimaryKey, error) {
+func (d *dynamodbWrapper[T]) Create(ctx context.Context, entity T) (DynamoPrimaryKey, error) {
 	panic("unimplemented")
 }
 
 // Update implements Commands
-func (*DynamodbWrapper[T]) Update(context.Context, DynamoPrimaryKey, []DynamoAttribute) error {
+func (*dynamodbWrapper[T]) Update(context.Context, DynamoPrimaryKey, []DynamoAttribute) error {
 	panic("unimplemented")
 }
 
-var _ Commands[_entity] = (*DynamodbWrapper[_entity])(nil)
+var _ Commands[_entity] = (*dynamodbWrapper[_entity])(nil)

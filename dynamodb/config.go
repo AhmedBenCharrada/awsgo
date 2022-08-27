@@ -5,8 +5,8 @@ type DBIndexName string
 
 // DBPrimaryKeyNames custom type for dynamo primary key
 type DBPrimaryKeyNames struct {
-	PartitionKey DBKey
-	SortKey      *DBKey
+	PartitionKey DynamoKeyMetadata
+	SortKey      *DynamoKeyMetadata
 }
 
 // TableInfo dynamo DB table info

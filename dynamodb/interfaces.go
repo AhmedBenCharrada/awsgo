@@ -8,7 +8,7 @@ import (
 
 type EntityMarshaler[T any] interface {
 	Marshal() (map[string]*dynamodb.AttributeValue, error)
-	UnMarshal() (T, error)
+	UnMarshal(map[string]*dynamodb.AttributeValue) (T, error)
 }
 
 // KeyType represents the allowed dynamodb types.
@@ -19,17 +19,22 @@ type KeyType int
 const (
 	String KeyType = iota
 	Number
-	Binary
+	Boolean
 )
 
 // DBKey custom type for dynamo DB key name
 type DBKey string
 
+type DynamoKeyMetadata struct {
+	Name      DBKey
+	ValueType KeyType
+}
+
 // DynamoAttribute represents the data for a dynamodb attribute.
 type DynamoAttribute struct {
 	KeyName   DBKey
 	ValueType KeyType
-	KeyValue  interface{}
+	Value     interface{}
 }
 
 // DynamoPrimaryKey represents the data for a dynamodb partition key.
@@ -56,6 +61,6 @@ func (_entity) Marshal() (map[string]*dynamodb.AttributeValue, error) {
 	panic("unimplemented")
 }
 
-func (_entity) UnMarshal() (_entity, error) {
+func (_entity) UnMarshal(map[string]*dynamodb.AttributeValue) (_entity, error) {
 	panic("unimplemented")
 }

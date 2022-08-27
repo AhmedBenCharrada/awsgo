@@ -5,13 +5,13 @@ import (
 )
 
 // Get implements Queries
-func (*DynamodbWrapper[T]) Get(context.Context, DynamoPrimaryKey) (T, error) {
+func (*dynamodbWrapper[T]) Get(context.Context, DynamoPrimaryKey) (T, error) {
 	panic("unimplemented")
 }
 
 // GetByIDs implements Queries
-func (*DynamodbWrapper[T]) GetByIDs(context.Context, []DynamoPrimaryKey) ([]T, error) {
+func (*dynamodbWrapper[T]) GetByIDs(context.Context, []DynamoPrimaryKey) ([]T, error) {
 	panic("unimplemented")
 }
 
-var _ Queries[_entity] = (*DynamodbWrapper[_entity])(nil)
+var _ Queries[_entity] = (*dynamodbWrapper[_entity])(nil)

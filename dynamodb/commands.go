@@ -2,7 +2,6 @@ package dynamodb
 
 import (
 	"context"
-	"fmt"
 	"math/rand"
 	"strconv"
 	"time"
@@ -64,22 +63,24 @@ func addPrimaryKey(dbMap map[string]*dynamodb.AttributeValue, metadata DynamoKey
 
 	// if partition key read from the config is not found then it returns an error
 	if !ok {
-		return dynamoAttrib, fmt.Errorf("key not found")
+		return dynamoAttrib, ErrKeyNotFound
 	}
 
-	// if the partition key is nil then we create it
-	if k != nil {
-		partKey, val, err := createDynamoKey(metadata)
-		if err != nil {
-			return dynamoAttrib, err
-		}
+	val, empty := getValueOf(*k, metadata.ValueType)
 
+	if !empty {
 		dynamoAttrib.Value = val
-		dbMap[string(metadata.Name)] = partKey
 		return dynamoAttrib, nil
 	}
 
-	dynamoAttrib.Value = getValueOf(*k, metadata.ValueType)
+	// if the partition key is nil then we create it
+	partKey, val, err := createDynamoKey(metadata)
+	if err != nil {
+		return dynamoAttrib, err
+	}
+
+	dynamoAttrib.Value = val
+	dbMap[string(metadata.Name)] = partKey
 	return dynamoAttrib, nil
 }
 
@@ -102,18 +103,18 @@ func createDynamoKey(attribute DynamoKeyMetadata) (*dynamodb.AttributeValue, str
 		}, strconv.FormatBool(val), nil
 	}
 
-	return nil, "", fmt.Errorf("invalid key type")
+	return nil, "", ErrInvalidKeyType
 }
 
-func getValueOf(attribute dynamodb.AttributeValue, keyType KeyType) interface{} {
+func getValueOf(attribute dynamodb.AttributeValue, keyType KeyType) (val interface{}, empty bool) {
 	switch keyType {
 	case String, Number:
-		return attribute.S
+		return attribute.S, attribute.S == nil || *attribute.S == ""
 	case Boolean:
-		return attribute.BOOL
+		return attribute.BOOL, attribute.BOOL == nil
 	}
 
-	return nil
+	return nil, true
 }
 
 func randBool() bool {

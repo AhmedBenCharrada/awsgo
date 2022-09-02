@@ -16,6 +16,7 @@ import (
 type entity struct {
 	ID        string `json:"id"`
 	GroupID   int    `json:"group_id"`
+	Enabled   *bool  `json:"enabled"`
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
 }
@@ -29,7 +30,6 @@ func (e entity) UnMarshal(data map[string]*dynamodb.AttributeValue) (entity, err
 	return e, err
 }
 
-// Todo add more tests
 func TestCreate(t *testing.T) {
 	validDbConfig := dynamo.DBConfig{
 		TableInfo: dynamo.TableInfo{
@@ -105,6 +105,65 @@ func TestCreate(t *testing.T) {
 			dbClient: &dbWithNoError,
 			entity:   validEntity,
 			hasError: true,
+		},
+		{
+			name: "with wrong partition key metadata",
+			dbConfig: dynamo.DBConfig{
+				TableInfo: dynamo.TableInfo{
+					TableName: "tableName",
+					PrimaryKey: dynamo.DBPrimaryKeyNames{
+						PartitionKey: dynamo.DynamoKeyMetadata{
+							Name:      "id",
+							ValueType: dynamo.KeyType(99),
+						},
+					},
+				},
+			},
+			dbClient: &dbWithNoError,
+			entity:   validEntity,
+			hasError: true,
+		},
+		{
+			name: "with wrong sort key metadata",
+			dbConfig: dynamo.DBConfig{
+				TableInfo: dynamo.TableInfo{
+					TableName: "tableName",
+					PrimaryKey: dynamo.DBPrimaryKeyNames{
+						PartitionKey: dynamo.DynamoKeyMetadata{
+							Name:      "id",
+							ValueType: dynamo.String,
+						},
+						SortKey: &dynamo.DynamoKeyMetadata{
+							Name:      "group_id",
+							ValueType: dynamo.KeyType(99),
+						},
+					},
+				},
+			},
+			dbClient: &dbWithNoError,
+			entity:   validEntity,
+			hasError: true,
+		},
+		// for coverage
+		{
+			name: "entity with a boolean partition key",
+			dbConfig: dynamo.DBConfig{
+				TableInfo: dynamo.TableInfo{
+					TableName: "tableName",
+					PrimaryKey: dynamo.DBPrimaryKeyNames{
+						PartitionKey: dynamo.DynamoKeyMetadata{
+							Name:      "enabled",
+							ValueType: dynamo.Boolean,
+						},
+						SortKey: &dynamo.DynamoKeyMetadata{
+							Name:      "id",
+							ValueType: dynamo.String,
+						},
+					},
+				},
+			},
+			dbClient: &dbWithNoError,
+			entity:   validEntity,
 		},
 	}
 

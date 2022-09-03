@@ -8,9 +8,10 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
 )
 
+// DynamoAttr ...
 type DynamoAttr struct {
-	name  string
-	value *dynamodb.AttributeValue
+	Name  string
+	Value *dynamodb.AttributeValue
 }
 
 type dynamoExpressionBuilder struct {
@@ -43,11 +44,11 @@ func (b *dynamoExpressionBuilder) WithUpdateField(name string, value interface{}
 // BuildUpdateItemInput builds the update request.
 // Todo: consider adding conditional update.
 func (b *dynamoExpressionBuilder) BuildUpdateItemInput() (*dynamodb.UpdateItemInput, error) {
-	if b.partKey.name == "" || b.partKey.value == nil {
+	if b.partKey.Name == "" || b.partKey.Value == nil {
 		return nil, fmt.Errorf("invalid partition key")
 	}
 
-	if b.sortKey != nil && (b.sortKey.name == "" || b.sortKey.value == nil) {
+	if b.sortKey != nil && (b.sortKey.Name == "" || b.sortKey.Value == nil) {
 		return nil, fmt.Errorf("invalid sort key")
 	}
 
@@ -65,11 +66,11 @@ func (b *dynamoExpressionBuilder) BuildUpdateItemInput() (*dynamodb.UpdateItemIn
 
 func prepareDynamoKeys(partKey DynamoAttr, sortKey *DynamoAttr) map[string]*dynamodb.AttributeValue {
 	keys := map[string]*dynamodb.AttributeValue{
-		partKey.name: partKey.value,
+		partKey.Name: partKey.Value,
 	}
 
 	if sortKey != nil {
-		keys[sortKey.name] = sortKey.value
+		keys[sortKey.Name] = sortKey.Value
 	}
 
 	return keys

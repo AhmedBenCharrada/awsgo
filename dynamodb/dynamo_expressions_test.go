@@ -13,11 +13,11 @@ func TestNewDynamoUpdateBuildUpdateItemInputer(t *testing.T) {
 		builder := NewExpressionBuilder(
 			"table",
 			DynamoAttr{
-				name:  "GroupID",
-				value: &dynamodb.AttributeValue{S: aws.String("123")},
+				Name:  "GroupID",
+				Value: &dynamodb.AttributeValue{S: aws.String("123")},
 			}, &DynamoAttr{
-				name:  "ID",
-				value: &dynamodb.AttributeValue{S: aws.String("123")},
+				Name:  "ID",
+				Value: &dynamodb.AttributeValue{S: aws.String("123")},
 			},
 		)
 
@@ -44,8 +44,8 @@ func TestNewDynamoUpdateBuildUpdateItemInputer(t *testing.T) {
 		builder := NewExpressionBuilder(
 			"table",
 			DynamoAttr{
-				name:  "",
-				value: nil,
+				Name:  "",
+				Value: nil,
 			}, nil,
 		)
 
@@ -61,12 +61,12 @@ func TestNewDynamoUpdateBuildUpdateItemInputer(t *testing.T) {
 		builder := NewExpressionBuilder(
 			"table",
 			DynamoAttr{
-				name:  "GroupID",
-				value: &dynamodb.AttributeValue{S: aws.String("123")},
+				Name:  "GroupID",
+				Value: &dynamodb.AttributeValue{S: aws.String("123")},
 			},
 			&DynamoAttr{
-				name:  "",
-				value: &dynamodb.AttributeValue{S: aws.String("")},
+				Name:  "",
+				Value: &dynamodb.AttributeValue{S: aws.String("")},
 			},
 		)
 
@@ -82,11 +82,11 @@ func TestNewDynamoUpdateBuildUpdateItemInputer(t *testing.T) {
 		builder := NewExpressionBuilder(
 			"table",
 			DynamoAttr{
-				name:  "GroupID",
-				value: &dynamodb.AttributeValue{S: aws.String("123")},
+				Name:  "GroupID",
+				Value: &dynamodb.AttributeValue{S: aws.String("123")},
 			}, &DynamoAttr{
-				name:  "ID",
-				value: &dynamodb.AttributeValue{S: aws.String("123")},
+				Name:  "ID",
+				Value: &dynamodb.AttributeValue{S: aws.String("123")},
 			},
 		)
 

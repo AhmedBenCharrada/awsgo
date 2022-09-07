@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewDynamoUpdateBuildUpdateItemInputer(t *testing.T) {
+func TestNewDynamoUpdateBuildUpdateItemInput(t *testing.T) {
 	t.Run("successfully", func(t *testing.T) {
 		builder := NewExpressionBuilder(
 			"table",

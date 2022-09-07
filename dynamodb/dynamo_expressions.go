@@ -41,7 +41,7 @@ func (b *dynamoExpressionBuilder) WithUpdateField(name string, value interface{}
 	return b
 }
 
-// BuildUpdateItemInput builds the update request.
+// BuildUpdateItemInput builds the update item request.
 // Todo: consider adding conditional update.
 func (b *dynamoExpressionBuilder) BuildUpdateItemInput() (*dynamodb.UpdateItemInput, error) {
 	if b.partKey.Name == "" || b.partKey.Value == nil {
@@ -62,6 +62,23 @@ func (b *dynamoExpressionBuilder) BuildUpdateItemInput() (*dynamodb.UpdateItemIn
 		UpdateExpression:          expr.Update(),
 		TableName:                 aws.String(b.tableName),
 	}, err
+}
+
+// BuildDeleteItemInput builds the delete item request
+// Todo: consider adding conditional delete
+func (b *dynamoExpressionBuilder) BuildDeleteItemInput() (*dynamodb.DeleteItemInput, error) {
+	if b.partKey.Name == "" || b.partKey.Value == nil {
+		return nil, fmt.Errorf("invalid partition key")
+	}
+
+	if b.sortKey != nil && (b.sortKey.Name == "" || b.sortKey.Value == nil) {
+		return nil, fmt.Errorf("invalid sort key")
+	}
+
+	return &dynamodb.DeleteItemInput{
+		Key:       prepareDynamoKeys(b.partKey, b.sortKey),
+		TableName: aws.String(b.tableName),
+	}, nil
 }
 
 func prepareDynamoKeys(partKey DynamoAttr, sortKey *DynamoAttr) map[string]*dynamodb.AttributeValue {

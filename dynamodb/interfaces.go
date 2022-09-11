@@ -20,11 +20,6 @@ const (
 // DBKey custom type for dynamo DB key name
 type DBKey string
 
-type DynamoKeyMetadata struct {
-	Name    DBKey
-	KeyType DBKeyType
-}
-
 // DynamoAttribute represents the data for a dynamodb attribute.
 type DynamoAttribute struct {
 	KeyName DBKey

@@ -3,6 +3,12 @@ package dynamodb
 // DBIndexName custom type for dynamo DB index name
 type DBIndexName string
 
+// DynamoKeyMetadata the dynamo attribute metadata.
+type DynamoKeyMetadata struct {
+	Name    DBKey
+	KeyType DBKeyType
+}
+
 // DBPrimaryKeyNames custom type for dynamo primary key
 type DBPrimaryKeyNames struct {
 	PartitionKey DynamoKeyMetadata

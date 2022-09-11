@@ -10,9 +10,9 @@ import (
 
 // DynamoAttr ...
 type DynamoAttr struct {
-	Name      string
-	ValueType KeyType
-	Value     *dynamodb.AttributeValue
+	Name    string
+	KeyType DBKeyType
+	Value   *dynamodb.AttributeValue
 }
 
 func (d *DynamoAttr) IsEmpty() bool {
@@ -20,7 +20,7 @@ func (d *DynamoAttr) IsEmpty() bool {
 		return true
 	}
 
-	switch d.ValueType {
+	switch d.KeyType {
 	case String, Number:
 		return d.Value.S == nil || *d.Value.S == ""
 	}

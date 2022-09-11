@@ -36,12 +36,12 @@ func TestCreate(t *testing.T) {
 			TableName: "tableName",
 			PrimaryKey: dynamo.DBPrimaryKeyNames{
 				PartitionKey: dynamo.DynamoKeyMetadata{
-					Name:      "id",
-					ValueType: dynamo.String,
+					Name:    "id",
+					KeyType: dynamo.String,
 				},
 				SortKey: &dynamo.DynamoKeyMetadata{
-					Name:      "group_id",
-					ValueType: dynamo.Number,
+					Name:    "group_id",
+					KeyType: dynamo.Number,
 				},
 			},
 		},
@@ -96,8 +96,8 @@ func TestCreate(t *testing.T) {
 					TableName: "tableName",
 					PrimaryKey: dynamo.DBPrimaryKeyNames{
 						PartitionKey: dynamo.DynamoKeyMetadata{
-							Name:      "user_id",
-							ValueType: dynamo.String,
+							Name:    "user_id",
+							KeyType: dynamo.String,
 						},
 					},
 				},
@@ -113,8 +113,8 @@ func TestCreate(t *testing.T) {
 					TableName: "tableName",
 					PrimaryKey: dynamo.DBPrimaryKeyNames{
 						PartitionKey: dynamo.DynamoKeyMetadata{
-							Name:      "id",
-							ValueType: dynamo.KeyType(99),
+							Name:    "id",
+							KeyType: dynamo.DBKeyType(99),
 						},
 					},
 				},
@@ -130,12 +130,12 @@ func TestCreate(t *testing.T) {
 					TableName: "tableName",
 					PrimaryKey: dynamo.DBPrimaryKeyNames{
 						PartitionKey: dynamo.DynamoKeyMetadata{
-							Name:      "id",
-							ValueType: dynamo.String,
+							Name:    "id",
+							KeyType: dynamo.String,
 						},
 						SortKey: &dynamo.DynamoKeyMetadata{
-							Name:      "group_id",
-							ValueType: dynamo.KeyType(99),
+							Name:    "group_id",
+							KeyType: dynamo.DBKeyType(99),
 						},
 					},
 				},
@@ -152,12 +152,12 @@ func TestCreate(t *testing.T) {
 					TableName: "tableName",
 					PrimaryKey: dynamo.DBPrimaryKeyNames{
 						PartitionKey: dynamo.DynamoKeyMetadata{
-							Name:      "enabled",
-							ValueType: dynamo.Boolean,
+							Name:    "enabled",
+							KeyType: dynamo.Boolean,
 						},
 						SortKey: &dynamo.DynamoKeyMetadata{
-							Name:      "id",
-							ValueType: dynamo.String,
+							Name:    "id",
+							KeyType: dynamo.String,
 						},
 					},
 				},
@@ -184,12 +184,12 @@ func TestUpdate(t *testing.T) {
 			TableName: "tableName",
 			PrimaryKey: dynamo.DBPrimaryKeyNames{
 				PartitionKey: dynamo.DynamoKeyMetadata{
-					Name:      "group_id",
-					ValueType: dynamo.String,
+					Name:    "group_id",
+					KeyType: dynamo.String,
 				},
 				SortKey: &dynamo.DynamoKeyMetadata{
-					Name:      "id",
-					ValueType: dynamo.Number,
+					Name:    "id",
+					KeyType: dynamo.Number,
 				},
 			},
 		},
@@ -203,14 +203,14 @@ func TestUpdate(t *testing.T) {
 
 	validKeys := dynamo.DynamoPrimaryKey{
 		PartitionKey: dynamo.DynamoAttribute{
-			KeyName:   "group_id",
-			ValueType: dynamo.String,
-			Value:     "123",
+			KeyName: "group_id",
+			KeyType: dynamo.String,
+			Value:   "123",
 		},
 		SortKey: &dynamo.DynamoAttribute{
-			KeyName:   "id",
-			ValueType: dynamo.String,
-			Value:     "12345",
+			KeyName: "id",
+			KeyType: dynamo.String,
+			Value:   "12345",
 		},
 	}
 
@@ -242,9 +242,9 @@ func TestUpdate(t *testing.T) {
 			dbClient: &dbWithNoError,
 			keys: dynamo.DynamoPrimaryKey{
 				PartitionKey: dynamo.DynamoAttribute{
-					KeyName:   "group_id",
-					ValueType: dynamo.String,
-					Value:     "123",
+					KeyName: "group_id",
+					KeyType: dynamo.String,
+					Value:   "123",
 				},
 			},
 			input: input,
@@ -261,9 +261,9 @@ func TestUpdate(t *testing.T) {
 			dbClient: &dbWithNoError,
 			keys: dynamo.DynamoPrimaryKey{
 				PartitionKey: dynamo.DynamoAttribute{
-					KeyName:   "group_id",
-					ValueType: dynamo.KeyType(99), // invalid key type
-					Value:     "123",
+					KeyName: "group_id",
+					KeyType: dynamo.DBKeyType(99), // invalid key type
+					Value:   "123",
 				},
 			},
 			input:    input,
@@ -295,12 +295,12 @@ func TestDelete(t *testing.T) {
 			TableName: "tableName",
 			PrimaryKey: dynamo.DBPrimaryKeyNames{
 				PartitionKey: dynamo.DynamoKeyMetadata{
-					Name:      "group_id",
-					ValueType: dynamo.String,
+					Name:    "group_id",
+					KeyType: dynamo.String,
 				},
 				SortKey: &dynamo.DynamoKeyMetadata{
-					Name:      "id",
-					ValueType: dynamo.Number,
+					Name:    "id",
+					KeyType: dynamo.Number,
 				},
 			},
 		},
@@ -314,14 +314,14 @@ func TestDelete(t *testing.T) {
 
 	validKeys := dynamo.DynamoPrimaryKey{
 		PartitionKey: dynamo.DynamoAttribute{
-			KeyName:   "group_id",
-			ValueType: dynamo.String,
-			Value:     "123",
+			KeyName: "group_id",
+			KeyType: dynamo.String,
+			Value:   "123",
 		},
 		SortKey: &dynamo.DynamoAttribute{
-			KeyName:   "id",
-			ValueType: dynamo.String,
-			Value:     "12345",
+			KeyName: "id",
+			KeyType: dynamo.String,
+			Value:   "12345",
 		},
 	}
 
@@ -341,9 +341,9 @@ func TestDelete(t *testing.T) {
 			dbClient: &dbWithNoError,
 			keys: dynamo.DynamoPrimaryKey{
 				PartitionKey: dynamo.DynamoAttribute{
-					KeyName:   "group_id",
-					ValueType: dynamo.String,
-					Value:     "123",
+					KeyName: "group_id",
+					KeyType: dynamo.String,
+					Value:   "123",
 				},
 			},
 		},
@@ -358,9 +358,9 @@ func TestDelete(t *testing.T) {
 			dbClient: &dbWithNoError,
 			keys: dynamo.DynamoPrimaryKey{
 				PartitionKey: dynamo.DynamoAttribute{
-					KeyName:   "group_id",
-					ValueType: dynamo.KeyType(99), // invalid key type
-					Value:     "123",
+					KeyName: "group_id",
+					KeyType: dynamo.DBKeyType(99), // invalid key type
+					Value:   "123",
 				},
 			},
 			hasError: true,
@@ -370,14 +370,14 @@ func TestDelete(t *testing.T) {
 			dbClient: &dbWithNoError,
 			keys: dynamo.DynamoPrimaryKey{
 				PartitionKey: dynamo.DynamoAttribute{
-					KeyName:   "group_id",
-					ValueType: dynamo.String,
-					Value:     "",
+					KeyName: "group_id",
+					KeyType: dynamo.String,
+					Value:   "",
 				},
 				SortKey: &dynamo.DynamoAttribute{
-					KeyName:   "id",
-					ValueType: dynamo.String,
-					Value:     "",
+					KeyName: "id",
+					KeyType: dynamo.String,
+					Value:   "",
 				},
 			},
 			hasError: true,

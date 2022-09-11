@@ -98,7 +98,7 @@ func (d *dynamodbWrapper[T]) Delete(ctx context.Context, primaryKey DynamoPrimar
 
 func preparePartSortKey(primaryKey DynamoPrimaryKey) (partKey DynamoAttr, sortKey *DynamoAttr, err error) {
 	partKey, err = createDynamoAttribute(string(primaryKey.PartitionKey.KeyName), primaryKey.PartitionKey.Value,
-		primaryKey.PartitionKey.ValueType,
+		primaryKey.PartitionKey.KeyType,
 	)
 	if err != nil {
 		return
@@ -109,7 +109,7 @@ func preparePartSortKey(primaryKey DynamoPrimaryKey) (partKey DynamoAttr, sortKe
 	}
 
 	sKey, sKerErr := createDynamoAttribute(string(primaryKey.SortKey.KeyName), primaryKey.SortKey.Value,
-		primaryKey.PartitionKey.ValueType,
+		primaryKey.PartitionKey.KeyType,
 	)
 
 	err = sKerErr
@@ -119,8 +119,8 @@ func preparePartSortKey(primaryKey DynamoPrimaryKey) (partKey DynamoAttr, sortKe
 
 func addPrimaryKey(dbMap map[string]*dynamodb.AttributeValue, metadata DynamoKeyMetadata) (DynamoAttribute, error) {
 	dynamoAttrib := DynamoAttribute{
-		KeyName:   metadata.Name,
-		ValueType: metadata.ValueType,
+		KeyName: metadata.Name,
+		KeyType: metadata.KeyType,
 	}
 	// getting the partition key
 	k, ok := dbMap[string(metadata.Name)]
@@ -130,7 +130,7 @@ func addPrimaryKey(dbMap map[string]*dynamodb.AttributeValue, metadata DynamoKey
 		return dynamoAttrib, ErrKeyNotFound
 	}
 
-	val, empty := getValueOf(*k, metadata.ValueType)
+	val, empty := getValueOf(*k, metadata.KeyType)
 
 	if !empty {
 		dynamoAttrib.Value = val
@@ -149,7 +149,7 @@ func addPrimaryKey(dbMap map[string]*dynamodb.AttributeValue, metadata DynamoKey
 }
 
 func initDynamoKeyValue(attribute DynamoKeyMetadata) (*dynamodb.AttributeValue, interface{}, error) {
-	switch attribute.ValueType {
+	switch attribute.KeyType {
 	case String:
 		val := uuid.NewString()
 		dynamoValue, err := newDynamoAttributeValue(val, String)
@@ -164,24 +164,24 @@ func initDynamoKeyValue(attribute DynamoKeyMetadata) (*dynamodb.AttributeValue, 
 		return dynamoValue, val, err
 	}
 
-	return nil, nil, ErrInvalidKeyType
+	return nil, nil, ErrInvalidDBKeyType
 }
 
-func createDynamoAttribute(name string, value interface{}, valueType KeyType) (DynamoAttr, error) {
-	dynamoValue, err := newDynamoAttributeValue(value, valueType)
+func createDynamoAttribute(name string, value interface{}, KeyType DBKeyType) (DynamoAttr, error) {
+	dynamoValue, err := newDynamoAttributeValue(value, KeyType)
 	if err != nil {
 		return DynamoAttr{}, err
 	}
 
 	return DynamoAttr{
-		Name:      string(name),
-		ValueType: valueType,
-		Value:     dynamoValue,
+		Name:    string(name),
+		KeyType: KeyType,
+		Value:   dynamoValue,
 	}, nil
 }
 
-func newDynamoAttributeValue(value interface{}, valueType KeyType) (*dynamodb.AttributeValue, error) {
-	switch valueType {
+func newDynamoAttributeValue(value interface{}, KeyType DBKeyType) (*dynamodb.AttributeValue, error) {
+	switch KeyType {
 	case String:
 		return &dynamodb.AttributeValue{
 			S: aws.String(value.(string)),
@@ -197,11 +197,11 @@ func newDynamoAttributeValue(value interface{}, valueType KeyType) (*dynamodb.At
 		}, nil
 	}
 
-	return nil, ErrInvalidKeyType
+	return nil, ErrInvalidDBKeyType
 }
 
-func getValueOf(attribute dynamodb.AttributeValue, keyType KeyType) (val interface{}, empty bool) {
-	switch keyType {
+func getValueOf(attribute dynamodb.AttributeValue, DBKeyType DBKeyType) (val interface{}, empty bool) {
+	switch DBKeyType {
 	case String, Number:
 		return attribute.S, attribute.S == nil || *attribute.S == ""
 	case Boolean:

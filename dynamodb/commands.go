@@ -152,8 +152,9 @@ func createDynamoAttribute(name string, value interface{}, valueType KeyType) (D
 	}
 
 	return DynamoAttr{
-		Name:  string(name),
-		Value: dynamoValue,
+		Name:      string(name),
+		ValueType: valueType,
+		Value:     dynamoValue,
 	}, nil
 }
 

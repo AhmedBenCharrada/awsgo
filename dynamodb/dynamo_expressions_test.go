@@ -13,11 +13,13 @@ func TestNewDynamoUpdateBuildUpdateItemInput(t *testing.T) {
 		builder := NewExpressionBuilder(
 			"table",
 			DynamoAttr{
-				Name:  "GroupID",
-				Value: &dynamodb.AttributeValue{S: aws.String("123")},
+				Name:      "GroupID",
+				ValueType: String,
+				Value:     &dynamodb.AttributeValue{S: aws.String("123")},
 			}, &DynamoAttr{
-				Name:  "ID",
-				Value: &dynamodb.AttributeValue{S: aws.String("123")},
+				Name:      "ID",
+				ValueType: String,
+				Value:     &dynamodb.AttributeValue{S: aws.String("123")},
 			},
 		)
 
@@ -44,8 +46,9 @@ func TestNewDynamoUpdateBuildUpdateItemInput(t *testing.T) {
 		builder := NewExpressionBuilder(
 			"table",
 			DynamoAttr{
-				Name:  "",
-				Value: nil,
+				Name:      "",
+				ValueType: String,
+				Value:     nil,
 			}, nil,
 		)
 
@@ -61,12 +64,14 @@ func TestNewDynamoUpdateBuildUpdateItemInput(t *testing.T) {
 		builder := NewExpressionBuilder(
 			"table",
 			DynamoAttr{
-				Name:  "GroupID",
-				Value: &dynamodb.AttributeValue{S: aws.String("123")},
+				Name:      "GroupID",
+				ValueType: String,
+				Value:     &dynamodb.AttributeValue{S: aws.String("123")},
 			},
 			&DynamoAttr{
-				Name:  "",
-				Value: &dynamodb.AttributeValue{S: aws.String("")},
+				Name:      "",
+				ValueType: String,
+				Value:     &dynamodb.AttributeValue{S: aws.String("")},
 			},
 		)
 
@@ -82,17 +87,64 @@ func TestNewDynamoUpdateBuildUpdateItemInput(t *testing.T) {
 		builder := NewExpressionBuilder(
 			"table",
 			DynamoAttr{
-				Name:  "GroupID",
-				Value: &dynamodb.AttributeValue{S: aws.String("123")},
+				Name:      "GroupID",
+				ValueType: String,
+				Value:     &dynamodb.AttributeValue{S: aws.String("123")},
 			}, &DynamoAttr{
-				Name:  "ID",
-				Value: &dynamodb.AttributeValue{S: aws.String("123")},
+				Name:      "ID",
+				ValueType: String,
+				Value:     &dynamodb.AttributeValue{S: aws.String("123")},
 			},
 		)
 
 		_, err := builder.BuildUpdateItemInput()
 		assert.Error(t, err)
 	})
+
+	t.Run("with nil partition-key", func(t *testing.T) {
+		builder := NewExpressionBuilder(
+			"table",
+			DynamoAttr{
+				Name:      "GroupID",
+				ValueType: Boolean,
+				Value:     nil,
+			}, &DynamoAttr{
+				Name:      "ID",
+				ValueType: String,
+				Value:     &dynamodb.AttributeValue{S: aws.String("123")},
+			},
+		)
+
+		builder.
+			WithUpdateField("family-name", "fam-name").
+			WithUpdateField("first-name", "fname")
+
+		_, err := builder.BuildUpdateItemInput()
+		assert.Error(t, err)
+	})
+
+	t.Run("with nil partition-key value", func(t *testing.T) {
+		builder := NewExpressionBuilder(
+			"table",
+			DynamoAttr{
+				Name:      "GroupID",
+				ValueType: Boolean,
+				Value:     &dynamodb.AttributeValue{},
+			}, &DynamoAttr{
+				Name:      "ID",
+				ValueType: String,
+				Value:     &dynamodb.AttributeValue{S: aws.String("123")},
+			},
+		)
+
+		builder.
+			WithUpdateField("family-name", "fam-name").
+			WithUpdateField("first-name", "fname")
+
+		_, err := builder.BuildUpdateItemInput()
+		assert.Error(t, err)
+	})
+
 }
 
 func TestNewDynamoUpdateBuildDeleteItemInput(t *testing.T) {
@@ -100,11 +152,13 @@ func TestNewDynamoUpdateBuildDeleteItemInput(t *testing.T) {
 		builder := NewExpressionBuilder(
 			"table",
 			DynamoAttr{
-				Name:  "GroupID",
-				Value: &dynamodb.AttributeValue{S: aws.String("123")},
+				Name:      "GroupID",
+				ValueType: String,
+				Value:     &dynamodb.AttributeValue{S: aws.String("123")},
 			}, &DynamoAttr{
-				Name:  "ID",
-				Value: &dynamodb.AttributeValue{S: aws.String("123")},
+				Name:      "ID",
+				ValueType: String,
+				Value:     &dynamodb.AttributeValue{S: aws.String("123")},
 			},
 		)
 
@@ -117,8 +171,9 @@ func TestNewDynamoUpdateBuildDeleteItemInput(t *testing.T) {
 		builder := NewExpressionBuilder(
 			"table",
 			DynamoAttr{
-				Name:  "",
-				Value: nil,
+				Name:      "",
+				ValueType: String,
+				Value:     nil,
 			}, nil,
 		)
 
@@ -130,12 +185,14 @@ func TestNewDynamoUpdateBuildDeleteItemInput(t *testing.T) {
 		builder := NewExpressionBuilder(
 			"table",
 			DynamoAttr{
-				Name:  "GroupID",
-				Value: &dynamodb.AttributeValue{S: aws.String("123")},
+				Name:      "GroupID",
+				ValueType: String,
+				Value:     &dynamodb.AttributeValue{S: aws.String("123")},
 			},
 			&DynamoAttr{
-				Name:  "",
-				Value: &dynamodb.AttributeValue{S: aws.String("")},
+				Name:      "",
+				ValueType: String,
+				Value:     &dynamodb.AttributeValue{S: aws.String("")},
 			},
 		)
 

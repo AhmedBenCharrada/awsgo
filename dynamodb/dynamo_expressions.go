@@ -10,8 +10,22 @@ import (
 
 // DynamoAttr ...
 type DynamoAttr struct {
-	Name  string
-	Value *dynamodb.AttributeValue
+	Name      string
+	ValueType KeyType
+	Value     *dynamodb.AttributeValue
+}
+
+func (d *DynamoAttr) IsEmpty() bool {
+	if d.Name == "" || d.Value == nil {
+		return true
+	}
+
+	switch d.ValueType {
+	case String, Number:
+		return d.Value.S == nil || *d.Value.S == ""
+	}
+
+	return d.Value.S == nil
 }
 
 type dynamoExpressionBuilder struct {
@@ -44,11 +58,11 @@ func (b *dynamoExpressionBuilder) WithUpdateField(name string, value interface{}
 // BuildUpdateItemInput builds the update item request.
 // Todo: consider adding conditional update.
 func (b *dynamoExpressionBuilder) BuildUpdateItemInput() (*dynamodb.UpdateItemInput, error) {
-	if b.partKey.Name == "" || b.partKey.Value == nil {
+	if b.partKey.IsEmpty() {
 		return nil, fmt.Errorf("invalid partition key")
 	}
 
-	if b.sortKey != nil && (b.sortKey.Name == "" || b.sortKey.Value == nil) {
+	if b.sortKey != nil && b.sortKey.IsEmpty() {
 		return nil, fmt.Errorf("invalid sort key")
 	}
 
@@ -67,11 +81,11 @@ func (b *dynamoExpressionBuilder) BuildUpdateItemInput() (*dynamodb.UpdateItemIn
 // BuildDeleteItemInput builds the delete item request
 // Todo: consider adding conditional delete
 func (b *dynamoExpressionBuilder) BuildDeleteItemInput() (*dynamodb.DeleteItemInput, error) {
-	if b.partKey.Name == "" || b.partKey.Value == nil {
+	if b.partKey.IsEmpty() {
 		return nil, fmt.Errorf("invalid partition key")
 	}
 
-	if b.sortKey != nil && (b.sortKey.Name == "" || b.sortKey.Value == nil) {
+	if b.sortKey != nil && b.sortKey.IsEmpty() {
 		return nil, fmt.Errorf("invalid sort key")
 	}
 

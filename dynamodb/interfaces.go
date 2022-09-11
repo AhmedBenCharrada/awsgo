@@ -2,7 +2,6 @@ package dynamodb
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 )
@@ -16,11 +15,6 @@ const (
 	String DBKeyType = iota
 	Number
 	Boolean
-)
-
-var (
-	ErrKeyNotFound      = fmt.Errorf("key not found")
-	ErrInvalidDBKeyType = fmt.Errorf("invalid key type")
 )
 
 // DBKey custom type for dynamo DB key name

@@ -74,6 +74,28 @@ func (d *dynamodbWrapper[T]) Update(ctx context.Context, primaryKey DynamoPrimar
 	return err
 }
 
+// Delete implements Commands
+func (d *dynamodbWrapper[T]) Delete(ctx context.Context, primaryKey DynamoPrimaryKey) error {
+	// prepare the partition and the sort keys
+	partKey, sortKey, err := preparePartSortKey(primaryKey)
+	if err != nil {
+		return err
+	}
+
+	// initialize the expression builder
+	builder := NewExpressionBuilder(d.conf.TableInfo.TableName, partKey, sortKey)
+
+	// create the delete item input
+	req, err := builder.BuildDeleteItemInput()
+	if err != nil {
+		return err
+	}
+
+	// call dynamo delete item
+	_, err = d.client.DeleteItemWithContext(ctx, req)
+	return err
+}
+
 func preparePartSortKey(primaryKey DynamoPrimaryKey) (partKey DynamoAttr, sortKey *DynamoAttr, err error) {
 	partKey, err = createDynamoAttribute(string(primaryKey.PartitionKey.KeyName), primaryKey.PartitionKey.Value,
 		primaryKey.PartitionKey.ValueType,

@@ -288,3 +288,109 @@ func TestUpdate(t *testing.T) {
 		})
 	}
 }
+
+func TestDelete(t *testing.T) {
+	validDbConfig := dynamo.DBConfig{
+		TableInfo: dynamo.TableInfo{
+			TableName: "tableName",
+			PrimaryKey: dynamo.DBPrimaryKeyNames{
+				PartitionKey: dynamo.DynamoKeyMetadata{
+					Name:      "group_id",
+					ValueType: dynamo.String,
+				},
+				SortKey: &dynamo.DynamoKeyMetadata{
+					Name:      "id",
+					ValueType: dynamo.Number,
+				},
+			},
+		},
+	}
+
+	dbWithNoError := mocks.DBClient{}
+	dbWithNoError.On("DeleteItemWithContext", mock.Anything, mock.Anything).Return(&dynamodb.DeleteItemOutput{}, nil)
+
+	dbWithError := mocks.DBClient{}
+	dbWithError.On("DeleteItemWithContext", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("error"))
+
+	validKeys := dynamo.DynamoPrimaryKey{
+		PartitionKey: dynamo.DynamoAttribute{
+			KeyName:   "group_id",
+			ValueType: dynamo.String,
+			Value:     "123",
+		},
+		SortKey: &dynamo.DynamoAttribute{
+			KeyName:   "id",
+			ValueType: dynamo.String,
+			Value:     "12345",
+		},
+	}
+
+	cases := []struct {
+		name     string
+		dbClient dynamo.DBClient
+		keys     dynamo.DynamoPrimaryKey
+		hasError bool
+	}{
+		{
+			name:     "successfully (with partition and sort keys)",
+			dbClient: &dbWithNoError,
+			keys:     validKeys,
+		},
+		{
+			name:     "successfully (with partition key only)",
+			dbClient: &dbWithNoError,
+			keys: dynamo.DynamoPrimaryKey{
+				PartitionKey: dynamo.DynamoAttribute{
+					KeyName:   "group_id",
+					ValueType: dynamo.String,
+					Value:     "123",
+				},
+			},
+		},
+		{
+			name:     "with db error",
+			dbClient: &dbWithError,
+			keys:     validKeys,
+			hasError: true,
+		},
+		{
+			name:     "with create partition key error",
+			dbClient: &dbWithNoError,
+			keys: dynamo.DynamoPrimaryKey{
+				PartitionKey: dynamo.DynamoAttribute{
+					KeyName:   "group_id",
+					ValueType: dynamo.KeyType(99), // invalid key type
+					Value:     "123",
+				},
+			},
+			hasError: true,
+		},
+		{
+			name:     "with empty partition key value)",
+			dbClient: &dbWithNoError,
+			keys: dynamo.DynamoPrimaryKey{
+				PartitionKey: dynamo.DynamoAttribute{
+					KeyName:   "group_id",
+					ValueType: dynamo.String,
+					Value:     "",
+				},
+				SortKey: &dynamo.DynamoAttribute{
+					KeyName:   "id",
+					ValueType: dynamo.String,
+					Value:     "",
+				},
+			},
+			hasError: true,
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			db := dynamo.NewDynamoWrapper[entity](tc.dbClient, validDbConfig)
+
+			err := db.Delete(context.Background(), tc.keys)
+			assert.Equal(t, !tc.hasError, err == nil)
+		})
+	}
+}

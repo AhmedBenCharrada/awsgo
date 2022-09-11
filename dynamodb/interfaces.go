@@ -59,6 +59,7 @@ type Queries[T EntityMarshaler[T]] interface {
 type Commands[T EntityMarshaler[T]] interface {
 	Create(context.Context, T) (DynamoPrimaryKey, error)
 	Update(context.Context, DynamoPrimaryKey, []DynamoAttribute) error
+	Delete(context.Context, DynamoPrimaryKey) error
 }
 
 type _entity struct{}

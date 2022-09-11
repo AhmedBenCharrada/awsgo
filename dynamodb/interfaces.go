@@ -7,11 +7,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 )
 
-type EntityMarshaler[T any] interface {
-	Marshal() (map[string]*dynamodb.AttributeValue, error)
-	UnMarshal(map[string]*dynamodb.AttributeValue) (T, error)
-}
-
 // DBKeyType represents the allowed dynamodb types.
 //
 // For more information, see https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.NamingRulesDataTypes.html
@@ -47,6 +42,12 @@ type DynamoAttribute struct {
 type DynamoPrimaryKey struct {
 	PartitionKey DynamoAttribute
 	SortKey      *DynamoAttribute
+}
+
+// EntityMarshaler describes the methods an entity should implement.
+type EntityMarshaler[T any] interface {
+	Marshal() (map[string]*dynamodb.AttributeValue, error)
+	UnMarshal(map[string]*dynamodb.AttributeValue) (T, error)
 }
 
 // Queries ...

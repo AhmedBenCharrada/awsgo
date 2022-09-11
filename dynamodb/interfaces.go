@@ -61,13 +61,3 @@ type Commands[T EntityMarshaler[T]] interface {
 	Update(context.Context, DynamoPrimaryKey, []DynamoAttribute) error
 	Delete(context.Context, DynamoPrimaryKey) error
 }
-
-type _entity struct{}
-
-func (_entity) Marshal() (map[string]*dynamodb.AttributeValue, error) {
-	panic("unimplemented")
-}
-
-func (_entity) UnMarshal(map[string]*dynamodb.AttributeValue) (_entity, error) {
-	panic("unimplemented")
-}

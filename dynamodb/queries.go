@@ -13,5 +13,3 @@ func (*dynamodbWrapper[T]) Get(context.Context, DynamoPrimaryKey) (T, error) {
 func (*dynamodbWrapper[T]) GetByIDs(context.Context, []DynamoPrimaryKey) ([]T, error) {
 	panic("unimplemented")
 }
-
-var _ Queries[_entity] = (*dynamodbWrapper[_entity])(nil)

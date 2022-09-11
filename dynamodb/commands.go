@@ -215,5 +215,3 @@ func randBool() bool {
 	rand.Seed(time.Now().UnixNano())
 	return rand.Intn(2) == 1
 }
-
-var _ Commands[_entity] = (*dynamodbWrapper[_entity])(nil)

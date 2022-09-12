@@ -200,3 +200,57 @@ func TestNewDynamoUpdateBuildDeleteItemInput(t *testing.T) {
 		assert.Error(t, err)
 	})
 }
+
+func TestNewDynamoUpdateBuildGetItemInput(t *testing.T) {
+	t.Run("successfully", func(t *testing.T) {
+		builder := NewExpressionBuilder(
+			"table",
+			DynamoAttr{
+				Name:    "GroupID",
+				KeyType: String,
+				Value:   &dynamodb.AttributeValue{S: aws.String("123")},
+			}, &DynamoAttr{
+				Name:    "ID",
+				KeyType: String,
+				Value:   &dynamodb.AttributeValue{S: aws.String("123")},
+			},
+		)
+
+		req, err := builder.BuildGetItemInput()
+		assert.NoError(t, err)
+		assert.NotNil(t, req)
+	})
+
+	t.Run("with empty partition key", func(t *testing.T) {
+		builder := NewExpressionBuilder(
+			"table",
+			DynamoAttr{
+				Name:    "",
+				KeyType: String,
+				Value:   nil,
+			}, nil,
+		)
+
+		_, err := builder.BuildGetItemInput()
+		assert.Error(t, err)
+	})
+
+	t.Run("with empty sort key", func(t *testing.T) {
+		builder := NewExpressionBuilder(
+			"table",
+			DynamoAttr{
+				Name:    "GroupID",
+				KeyType: String,
+				Value:   &dynamodb.AttributeValue{S: aws.String("123")},
+			},
+			&DynamoAttr{
+				Name:    "",
+				KeyType: String,
+				Value:   &dynamodb.AttributeValue{S: aws.String("")},
+			},
+		)
+
+		_, err := builder.BuildGetItemInput()
+		assert.Error(t, err)
+	})
+}

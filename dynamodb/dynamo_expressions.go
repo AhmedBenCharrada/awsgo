@@ -95,6 +95,22 @@ func (b *dynamoExpressionBuilder) BuildDeleteItemInput() (*dynamodb.DeleteItemIn
 	}, nil
 }
 
+// BuildGetItemInput builds the get item request
+func (b *dynamoExpressionBuilder) BuildGetItemInput() (*dynamodb.GetItemInput, error) {
+	if b.partKey.IsEmpty() {
+		return nil, fmt.Errorf("invalid partition key")
+	}
+
+	if b.sortKey != nil && b.sortKey.IsEmpty() {
+		return nil, fmt.Errorf("invalid sort key")
+	}
+
+	return &dynamodb.GetItemInput{
+		Key:       prepareDynamoKeys(b.partKey, b.sortKey),
+		TableName: aws.String(b.tableName),
+	}, nil
+}
+
 func prepareDynamoKeys(partKey DynamoAttr, sortKey *DynamoAttr) map[string]*dynamodb.AttributeValue {
 	keys := map[string]*dynamodb.AttributeValue{
 		partKey.Name: partKey.Value,

@@ -96,27 +96,6 @@ func (d *dynamodbWrapper[T]) Delete(ctx context.Context, primaryKey DynamoPrimar
 	return err
 }
 
-func preparePartSortKey(primaryKey DynamoPrimaryKey) (partKey DynamoAttr, sortKey *DynamoAttr, err error) {
-	partKey, err = createDynamoAttribute(string(primaryKey.PartitionKey.KeyName), primaryKey.PartitionKey.Value,
-		primaryKey.PartitionKey.KeyType,
-	)
-	if err != nil {
-		return
-	}
-
-	if primaryKey.SortKey == nil {
-		return
-	}
-
-	sKey, sKerErr := createDynamoAttribute(string(primaryKey.SortKey.KeyName), primaryKey.SortKey.Value,
-		primaryKey.PartitionKey.KeyType,
-	)
-
-	err = sKerErr
-	sortKey = &sKey
-	return
-}
-
 func addPrimaryKey(dbMap map[string]*dynamodb.AttributeValue, metadata DynamoKeyMetadata) (DynamoAttribute, error) {
 	dynamoAttrib := DynamoAttribute{
 		KeyName: metadata.Name,
@@ -187,7 +166,6 @@ func newDynamoAttributeValue(value interface{}, KeyType DBKeyType) (*dynamodb.At
 			S: aws.String(value.(string)),
 		}, nil
 	case Number:
-
 		return &dynamodb.AttributeValue{
 			N: aws.String(value.(string)),
 		}, nil
@@ -200,6 +178,7 @@ func newDynamoAttributeValue(value interface{}, KeyType DBKeyType) (*dynamodb.At
 	return nil, ErrInvalidDBKeyType
 }
 
+// Todo: fix get value for number type
 func getValueOf(attribute dynamodb.AttributeValue, DBKeyType DBKeyType) (val interface{}, empty bool) {
 	switch DBKeyType {
 	case String, Number:

@@ -133,6 +133,15 @@ func TestGet(t *testing.T) {
 			item, err := db.Get(context.Background(), tc.keys)
 			assert.Equal(t, !tc.hasError, err == nil)
 			assert.Equal(t, tc.hasError, item == nil)
+			if !tc.hasError {
+				assert.Equal(t, "123", item.ID)
+				assert.NotNil(t, item.GroupID)
+				assert.Equal(t, 1234, *item.GroupID)
+				assert.NotNil(t, item.Enabled)
+				assert.Equal(t, true, *item.Enabled)
+				assert.Equal(t, "name", item.FirstName)
+				assert.Equal(t, "l_name", item.LastName)
+			}
 		})
 	}
 }

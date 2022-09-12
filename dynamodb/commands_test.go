@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -37,7 +38,7 @@ func TestCreate(t *testing.T) {
 
 	validEntity := entity{
 		ID:        "id-1",
-		GroupID:   1,
+		GroupID:   aws.Int(1),
 		FirstName: "f1",
 		LastName:  "L1",
 	}

@@ -178,11 +178,12 @@ func newDynamoAttributeValue(value interface{}, KeyType DBKeyType) (*dynamodb.At
 	return nil, ErrInvalidDBKeyType
 }
 
-// Todo: fix get value for number type
 func getValueOf(attribute dynamodb.AttributeValue, DBKeyType DBKeyType) (val interface{}, empty bool) {
 	switch DBKeyType {
-	case String, Number:
+	case String:
 		return attribute.S, attribute.S == nil || *attribute.S == ""
+	case Number:
+		return attribute.N, attribute.N == nil || *attribute.N == ""
 	case Boolean:
 		return attribute.BOOL, attribute.BOOL == nil
 	}

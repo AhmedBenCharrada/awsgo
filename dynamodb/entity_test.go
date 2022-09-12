@@ -7,7 +7,7 @@ import (
 
 type entity struct {
 	ID        string `json:"id"`
-	GroupID   int    `json:"group_id"`
+	GroupID   *int   `json:"group_id"`
 	Enabled   *bool  `json:"enabled"`
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`

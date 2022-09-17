@@ -15,6 +15,11 @@ type DynamoAttr struct {
 	Value   *dynamodb.AttributeValue
 }
 
+var (
+	ErrInvalidPartitionKey = fmt.Errorf("invalid partition key")
+	ErrInvalidSortKey      = fmt.Errorf("invalid sort key")
+)
+
 func (d *DynamoAttr) IsEmpty() bool {
 	if d.Name == "" || d.Value == nil {
 		return true
@@ -59,11 +64,11 @@ func (b *dynamoExpressionBuilder) WithUpdateField(name string, value interface{}
 // Todo: consider adding conditional update.
 func (b *dynamoExpressionBuilder) BuildUpdateItemInput() (*dynamodb.UpdateItemInput, error) {
 	if b.partKey.IsEmpty() {
-		return nil, fmt.Errorf("invalid partition key")
+		return nil, ErrInvalidPartitionKey
 	}
 
 	if b.sortKey != nil && b.sortKey.IsEmpty() {
-		return nil, fmt.Errorf("invalid sort key")
+		return nil, ErrInvalidSortKey
 	}
 
 	builder := expression.NewBuilder().WithUpdate(b.UpdateBuilder)
@@ -82,11 +87,11 @@ func (b *dynamoExpressionBuilder) BuildUpdateItemInput() (*dynamodb.UpdateItemIn
 // Todo: consider adding conditional delete
 func (b *dynamoExpressionBuilder) BuildDeleteItemInput() (*dynamodb.DeleteItemInput, error) {
 	if b.partKey.IsEmpty() {
-		return nil, fmt.Errorf("invalid partition key")
+		return nil, ErrInvalidPartitionKey
 	}
 
 	if b.sortKey != nil && b.sortKey.IsEmpty() {
-		return nil, fmt.Errorf("invalid sort key")
+		return nil, ErrInvalidSortKey
 	}
 
 	return &dynamodb.DeleteItemInput{
@@ -98,11 +103,11 @@ func (b *dynamoExpressionBuilder) BuildDeleteItemInput() (*dynamodb.DeleteItemIn
 // BuildGetItemInput builds the get item request
 func (b *dynamoExpressionBuilder) BuildGetItemInput() (*dynamodb.GetItemInput, error) {
 	if b.partKey.IsEmpty() {
-		return nil, fmt.Errorf("invalid partition key")
+		return nil, ErrInvalidPartitionKey
 	}
 
 	if b.sortKey != nil && b.sortKey.IsEmpty() {
-		return nil, fmt.Errorf("invalid sort key")
+		return nil, ErrInvalidSortKey
 	}
 
 	return &dynamodb.GetItemInput{

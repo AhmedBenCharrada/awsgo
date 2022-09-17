@@ -20,6 +20,7 @@ var (
 	ErrInvalidSortKey      = fmt.Errorf("invalid sort key")
 )
 
+// IsEmpty checks whether a dynamo-value is nit or empty.
 func (d *DynamoAttr) IsEmpty() bool {
 	if d.Name == "" || d.Value == nil {
 		return true

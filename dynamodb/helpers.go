@@ -13,7 +13,7 @@ func preparePartSortKey(primaryKey DynamoPrimaryKey) (partKey DynamoAttr, sortKe
 	}
 
 	sKey, sKerErr := createDynamoAttribute(string(primaryKey.SortKey.KeyName), primaryKey.SortKey.Value,
-		primaryKey.PartitionKey.KeyType,
+		primaryKey.SortKey.KeyType,
 	)
 
 	err = sKerErr

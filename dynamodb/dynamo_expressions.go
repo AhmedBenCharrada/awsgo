@@ -42,13 +42,21 @@ type dynamoExpressionBuilder struct {
 }
 
 // NewExpressionBuilder creates a new dynamo update builder.
-func NewExpressionBuilder(tableName string, partKey DynamoAttr, sortKey *DynamoAttr) dynamoExpressionBuilder {
-	return dynamoExpressionBuilder{
+func NewExpressionBuilder(tableName string) *dynamoExpressionBuilder {
+	return &dynamoExpressionBuilder{
 		tableName:     tableName,
-		partKey:       partKey,
-		sortKey:       sortKey,
 		UpdateBuilder: expression.UpdateBuilder{},
 	}
+}
+
+func (b *dynamoExpressionBuilder) WithPartitionKey(key DynamoAttr) *dynamoExpressionBuilder {
+	b.partKey = key
+	return b
+}
+
+func (b *dynamoExpressionBuilder) WithSortKey(key *DynamoAttr) *dynamoExpressionBuilder {
+	b.sortKey = key
+	return b
 }
 
 // WithUpdateField sets an update field.

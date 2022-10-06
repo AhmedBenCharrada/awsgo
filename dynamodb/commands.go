@@ -57,7 +57,7 @@ func (d *dynamodbWrapper[T]) Update(ctx context.Context, primaryKey DynamoPrimar
 	}
 
 	// initialize the update-item input builder
-	builder := NewExpressionBuilder(d.conf.TableInfo.TableName, partKey, sortKey)
+	builder := NewExpressionBuilder(d.conf.TableInfo.TableName).WithPartitionKey(partKey).WithSortKey(sortKey)
 	// populate the update data
 	for _, attr := range values {
 		builder.WithUpdateField(string(attr.KeyName), attr.Value)
@@ -83,7 +83,7 @@ func (d *dynamodbWrapper[T]) Delete(ctx context.Context, primaryKey DynamoPrimar
 	}
 
 	// initialize the expression builder
-	builder := NewExpressionBuilder(d.conf.TableInfo.TableName, partKey, sortKey)
+	builder := NewExpressionBuilder(d.conf.TableInfo.TableName).WithPartitionKey(partKey).WithSortKey(sortKey)
 
 	// create the delete item input
 	req, err := builder.BuildDeleteItemInput()

@@ -10,18 +10,15 @@ import (
 
 func TestNewDynamoUpdateBuildUpdateItemInput(t *testing.T) {
 	t.Run("successfully", func(t *testing.T) {
-		builder := NewExpressionBuilder(
-			"table",
-			DynamoAttr{
-				Name:    "GroupID",
-				KeyType: String,
-				Value:   &dynamodb.AttributeValue{S: aws.String("123")},
-			}, &DynamoAttr{
-				Name:    "ID",
-				KeyType: String,
-				Value:   &dynamodb.AttributeValue{S: aws.String("123")},
-			},
-		)
+		builder := NewExpressionBuilder("table").WithPartitionKey(DynamoAttr{
+			Name:    "GroupID",
+			KeyType: String,
+			Value:   &dynamodb.AttributeValue{S: aws.String("123")},
+		}).WithSortKey(&DynamoAttr{
+			Name:    "ID",
+			KeyType: String,
+			Value:   &dynamodb.AttributeValue{S: aws.String("123")},
+		})
 
 		builder.
 			WithUpdateField("family-name", "fam-name").
@@ -43,14 +40,11 @@ func TestNewDynamoUpdateBuildUpdateItemInput(t *testing.T) {
 	})
 
 	t.Run("with empty partition key", func(t *testing.T) {
-		builder := NewExpressionBuilder(
-			"table",
-			DynamoAttr{
-				Name:    "",
-				KeyType: String,
-				Value:   nil,
-			}, nil,
-		)
+		builder := NewExpressionBuilder("table").WithPartitionKey(DynamoAttr{
+			Name:    "",
+			KeyType: String,
+			Value:   nil,
+		})
 
 		builder.
 			WithUpdateField("family-name", "fam-name").
@@ -61,19 +55,15 @@ func TestNewDynamoUpdateBuildUpdateItemInput(t *testing.T) {
 	})
 
 	t.Run("with empty sort key", func(t *testing.T) {
-		builder := NewExpressionBuilder(
-			"table",
-			DynamoAttr{
-				Name:    "GroupID",
-				KeyType: String,
-				Value:   &dynamodb.AttributeValue{S: aws.String("123")},
-			},
-			&DynamoAttr{
-				Name:    "",
-				KeyType: String,
-				Value:   &dynamodb.AttributeValue{S: aws.String("")},
-			},
-		)
+		builder := NewExpressionBuilder("table").WithPartitionKey(DynamoAttr{
+			Name:    "GroupID",
+			KeyType: String,
+			Value:   &dynamodb.AttributeValue{S: aws.String("123")},
+		}).WithSortKey(&DynamoAttr{
+			Name:    "",
+			KeyType: String,
+			Value:   &dynamodb.AttributeValue{S: aws.String("")},
+		})
 
 		builder.
 			WithUpdateField("family-name", "fam-name").
@@ -84,36 +74,30 @@ func TestNewDynamoUpdateBuildUpdateItemInput(t *testing.T) {
 	})
 
 	t.Run("with empty upload data", func(t *testing.T) {
-		builder := NewExpressionBuilder(
-			"table",
-			DynamoAttr{
-				Name:    "GroupID",
-				KeyType: String,
-				Value:   &dynamodb.AttributeValue{S: aws.String("123")},
-			}, &DynamoAttr{
-				Name:    "ID",
-				KeyType: String,
-				Value:   &dynamodb.AttributeValue{S: aws.String("123")},
-			},
-		)
+		builder := NewExpressionBuilder("table").WithPartitionKey(DynamoAttr{
+			Name:    "GroupID",
+			KeyType: String,
+			Value:   &dynamodb.AttributeValue{S: aws.String("123")},
+		}).WithSortKey(&DynamoAttr{
+			Name:    "ID",
+			KeyType: String,
+			Value:   &dynamodb.AttributeValue{S: aws.String("123")},
+		})
 
 		_, err := builder.BuildUpdateItemInput()
 		assert.Error(t, err)
 	})
 
 	t.Run("with nil partition-key", func(t *testing.T) {
-		builder := NewExpressionBuilder(
-			"table",
-			DynamoAttr{
-				Name:    "GroupID",
-				KeyType: Boolean,
-				Value:   nil,
-			}, &DynamoAttr{
-				Name:    "ID",
-				KeyType: String,
-				Value:   &dynamodb.AttributeValue{S: aws.String("123")},
-			},
-		)
+		builder := NewExpressionBuilder("table").WithPartitionKey(DynamoAttr{
+			Name:    "GroupID",
+			KeyType: String,
+			Value:   nil,
+		}).WithSortKey(&DynamoAttr{
+			Name:    "ID",
+			KeyType: String,
+			Value:   &dynamodb.AttributeValue{S: aws.String("123")},
+		})
 
 		builder.
 			WithUpdateField("family-name", "fam-name").
@@ -124,18 +108,15 @@ func TestNewDynamoUpdateBuildUpdateItemInput(t *testing.T) {
 	})
 
 	t.Run("with nil partition-key value", func(t *testing.T) {
-		builder := NewExpressionBuilder(
-			"table",
-			DynamoAttr{
-				Name:    "GroupID",
-				KeyType: Boolean,
-				Value:   &dynamodb.AttributeValue{},
-			}, &DynamoAttr{
-				Name:    "ID",
-				KeyType: String,
-				Value:   &dynamodb.AttributeValue{S: aws.String("123")},
-			},
-		)
+		builder := NewExpressionBuilder("table").WithPartitionKey(DynamoAttr{
+			Name:    "GroupID",
+			KeyType: Boolean,
+			Value:   &dynamodb.AttributeValue{},
+		}).WithSortKey(&DynamoAttr{
+			Name:    "ID",
+			KeyType: String,
+			Value:   &dynamodb.AttributeValue{S: aws.String("123")},
+		})
 
 		builder.
 			WithUpdateField("family-name", "fam-name").
@@ -149,18 +130,15 @@ func TestNewDynamoUpdateBuildUpdateItemInput(t *testing.T) {
 
 func TestNewDynamoUpdateBuildDeleteItemInput(t *testing.T) {
 	t.Run("successfully", func(t *testing.T) {
-		builder := NewExpressionBuilder(
-			"table",
-			DynamoAttr{
-				Name:    "GroupID",
-				KeyType: String,
-				Value:   &dynamodb.AttributeValue{S: aws.String("123")},
-			}, &DynamoAttr{
-				Name:    "ID",
-				KeyType: String,
-				Value:   &dynamodb.AttributeValue{S: aws.String("123")},
-			},
-		)
+		builder := NewExpressionBuilder("table").WithPartitionKey(DynamoAttr{
+			Name:    "GroupID",
+			KeyType: String,
+			Value:   &dynamodb.AttributeValue{S: aws.String("123")},
+		}).WithSortKey(&DynamoAttr{
+			Name:    "ID",
+			KeyType: String,
+			Value:   &dynamodb.AttributeValue{S: aws.String("123")},
+		})
 
 		req, err := builder.BuildDeleteItemInput()
 		assert.NoError(t, err)
@@ -168,33 +146,26 @@ func TestNewDynamoUpdateBuildDeleteItemInput(t *testing.T) {
 	})
 
 	t.Run("with empty partition key", func(t *testing.T) {
-		builder := NewExpressionBuilder(
-			"table",
-			DynamoAttr{
-				Name:    "",
-				KeyType: String,
-				Value:   nil,
-			}, nil,
-		)
+		builder := NewExpressionBuilder("table").WithPartitionKey(DynamoAttr{
+			Name:    "",
+			KeyType: String,
+			Value:   nil,
+		})
 
 		_, err := builder.BuildDeleteItemInput()
 		assert.Error(t, err)
 	})
 
 	t.Run("with empty sort key", func(t *testing.T) {
-		builder := NewExpressionBuilder(
-			"table",
-			DynamoAttr{
-				Name:    "GroupID",
-				KeyType: String,
-				Value:   &dynamodb.AttributeValue{S: aws.String("123")},
-			},
-			&DynamoAttr{
-				Name:    "",
-				KeyType: String,
-				Value:   &dynamodb.AttributeValue{S: aws.String("")},
-			},
-		)
+		builder := NewExpressionBuilder("table").WithPartitionKey(DynamoAttr{
+			Name:    "GroupID",
+			KeyType: String,
+			Value:   &dynamodb.AttributeValue{S: aws.String("123")},
+		}).WithSortKey(&DynamoAttr{
+			Name:    "",
+			KeyType: String,
+			Value:   &dynamodb.AttributeValue{S: aws.String("")},
+		})
 
 		_, err := builder.BuildDeleteItemInput()
 		assert.Error(t, err)
@@ -203,18 +174,15 @@ func TestNewDynamoUpdateBuildDeleteItemInput(t *testing.T) {
 
 func TestNewDynamoUpdateBuildGetItemInput(t *testing.T) {
 	t.Run("successfully", func(t *testing.T) {
-		builder := NewExpressionBuilder(
-			"table",
-			DynamoAttr{
-				Name:    "GroupID",
-				KeyType: String,
-				Value:   &dynamodb.AttributeValue{S: aws.String("123")},
-			}, &DynamoAttr{
-				Name:    "ID",
-				KeyType: String,
-				Value:   &dynamodb.AttributeValue{S: aws.String("123")},
-			},
-		)
+		builder := NewExpressionBuilder("table").WithPartitionKey(DynamoAttr{
+			Name:    "GroupID",
+			KeyType: String,
+			Value:   &dynamodb.AttributeValue{S: aws.String("123")},
+		}).WithSortKey(&DynamoAttr{
+			Name:    "ID",
+			KeyType: String,
+			Value:   &dynamodb.AttributeValue{S: aws.String("123")},
+		})
 
 		req, err := builder.BuildGetItemInput()
 		assert.NoError(t, err)
@@ -222,33 +190,26 @@ func TestNewDynamoUpdateBuildGetItemInput(t *testing.T) {
 	})
 
 	t.Run("with empty partition key", func(t *testing.T) {
-		builder := NewExpressionBuilder(
-			"table",
-			DynamoAttr{
-				Name:    "",
-				KeyType: String,
-				Value:   nil,
-			}, nil,
-		)
+		builder := NewExpressionBuilder("table").WithPartitionKey(DynamoAttr{
+			Name:    "",
+			KeyType: String,
+			Value:   &dynamodb.AttributeValue{S: aws.String("")},
+		})
 
 		_, err := builder.BuildGetItemInput()
 		assert.Error(t, err)
 	})
 
 	t.Run("with empty sort key", func(t *testing.T) {
-		builder := NewExpressionBuilder(
-			"table",
-			DynamoAttr{
-				Name:    "GroupID",
-				KeyType: String,
-				Value:   &dynamodb.AttributeValue{S: aws.String("123")},
-			},
-			&DynamoAttr{
-				Name:    "",
-				KeyType: String,
-				Value:   &dynamodb.AttributeValue{S: aws.String("")},
-			},
-		)
+		builder := NewExpressionBuilder("table").WithPartitionKey(DynamoAttr{
+			Name:    "GroupID",
+			KeyType: String,
+			Value:   &dynamodb.AttributeValue{S: aws.String("123")},
+		}).WithSortKey(&DynamoAttr{
+			Name:    "",
+			KeyType: String,
+			Value:   &dynamodb.AttributeValue{S: aws.String("")},
+		})
 
 		_, err := builder.BuildGetItemInput()
 		assert.Error(t, err)

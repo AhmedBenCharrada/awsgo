@@ -13,7 +13,7 @@ func (d *dynamodbWrapper[T]) Get(ctx context.Context, primaryKey DynamoPrimaryKe
 	}
 
 	// initialize the expression builder
-	builder := NewExpressionBuilder(d.conf.TableInfo.TableName, partKey, sortKey)
+	builder := NewExpressionBuilder(d.conf.TableInfo.TableName).WithPartitionKey(partKey).WithSortKey(sortKey)
 
 	// create the get item input
 	req, err := builder.BuildGetItemInput()

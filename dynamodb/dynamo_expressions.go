@@ -49,11 +49,13 @@ func NewExpressionBuilder(tableName string) *dynamoExpressionBuilder {
 	}
 }
 
+// WithPartitionKey sets the partition key
 func (b *dynamoExpressionBuilder) WithPartitionKey(key DynamoAttr) *dynamoExpressionBuilder {
 	b.partKey = key
 	return b
 }
 
+// WithSortKey sets the sort key
 func (b *dynamoExpressionBuilder) WithSortKey(key *DynamoAttr) *dynamoExpressionBuilder {
 	b.sortKey = key
 	return b

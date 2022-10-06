@@ -87,12 +87,8 @@ func (b *dynamoExpressionBuilder) BuildUpdateItemInput() (*dynamodb.UpdateItemIn
 // BuildDeleteItemInput builds the delete item request
 // Todo: consider adding conditional delete
 func (b *dynamoExpressionBuilder) BuildDeleteItemInput() (*dynamodb.DeleteItemInput, error) {
-	if b.partKey.IsEmpty() {
-		return nil, ErrInvalidPartitionKey
-	}
-
-	if b.sortKey != nil && b.sortKey.IsEmpty() {
-		return nil, ErrInvalidSortKey
+	if err := b.validateKeys(); err != nil {
+		return nil, err
 	}
 
 	return &dynamodb.DeleteItemInput{
@@ -103,18 +99,26 @@ func (b *dynamoExpressionBuilder) BuildDeleteItemInput() (*dynamodb.DeleteItemIn
 
 // BuildGetItemInput builds the get item request
 func (b *dynamoExpressionBuilder) BuildGetItemInput() (*dynamodb.GetItemInput, error) {
-	if b.partKey.IsEmpty() {
-		return nil, ErrInvalidPartitionKey
-	}
-
-	if b.sortKey != nil && b.sortKey.IsEmpty() {
-		return nil, ErrInvalidSortKey
+	if err := b.validateKeys(); err != nil {
+		return nil, err
 	}
 
 	return &dynamodb.GetItemInput{
 		Key:       prepareDynamoKeys(b.partKey, b.sortKey),
 		TableName: aws.String(b.tableName),
 	}, nil
+}
+
+func (b *dynamoExpressionBuilder) validateKeys() error {
+	if b.partKey.IsEmpty() {
+		return ErrInvalidPartitionKey
+	}
+
+	if b.sortKey != nil && b.sortKey.IsEmpty() {
+		return ErrInvalidSortKey
+	}
+
+	return nil
 }
 
 func prepareDynamoKeys(partKey DynamoAttr, sortKey *DynamoAttr) map[string]*dynamodb.AttributeValue {

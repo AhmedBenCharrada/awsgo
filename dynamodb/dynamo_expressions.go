@@ -119,6 +119,32 @@ func (b *dynamoExpressionBuilder) BuildGetItemInput() (*dynamodb.GetItemInput, e
 	}, nil
 }
 
+// BuildBatchGetItemInput builds batch get item input
+func (b *dynamoExpressionBuilder) BuildBatchGetItemInput(keys ...DynamoPrimaryKey) (*dynamodb.BatchGetItemInput, error) {
+	queries := make([]map[string]*dynamodb.AttributeValue, 0, len(keys))
+
+	for _, key := range keys {
+		// prepare the partition and the sort keys
+		partKey, sortKey, err := preparePartSortKey(key)
+		if err != nil {
+			return nil, err
+		}
+
+		// prepare the query input
+		query := prepareDynamoKeys(partKey, sortKey)
+		queries = append(queries, query)
+	}
+
+	// build batch get item input
+	return &dynamodb.BatchGetItemInput{
+		RequestItems: map[string]*dynamodb.KeysAndAttributes{
+			b.tableName: {
+				Keys: queries,
+			},
+		},
+	}, nil
+}
+
 func (b *dynamoExpressionBuilder) validateKeys() error {
 	if b.partKey.IsEmpty() {
 		return ErrInvalidPartitionKey

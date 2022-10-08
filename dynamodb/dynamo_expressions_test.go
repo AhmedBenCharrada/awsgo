@@ -215,3 +215,75 @@ func TestNewDynamoUpdateBuildGetItemInput(t *testing.T) {
 		assert.Error(t, err)
 	})
 }
+
+func TestBuildBatchGetItemInput(t *testing.T) {
+	cases := []struct {
+		name     string
+		input    []DynamoPrimaryKey
+		hasError bool
+	}{
+		{
+			name: "successfully",
+			input: []DynamoPrimaryKey{
+				{
+					PartitionKey: DynamoAttribute{
+						KeyName: "groupID",
+						KeyType: String,
+						Value:   "123",
+					},
+				},
+			},
+		},
+		{
+			name: "successfully (with sort-key)",
+			input: []DynamoPrimaryKey{
+				{
+					PartitionKey: DynamoAttribute{
+						KeyName: "groupID",
+						KeyType: String,
+						Value:   "123",
+					},
+					SortKey: &DynamoAttribute{
+						KeyName: "ID",
+						KeyType: String,
+						Value:   "123",
+					},
+				},
+			},
+		},
+		{
+			name: "with invalid key",
+			input: []DynamoPrimaryKey{
+				{
+					PartitionKey: DynamoAttribute{
+						KeyName: "ID",
+						KeyType: String,
+						Value:   "123",
+					},
+				},
+				{
+					PartitionKey: DynamoAttribute{
+						KeyName: "ID",
+						KeyType: DBKeyType(99), // invalid key type
+						Value:   "",
+					},
+				},
+			},
+			hasError: true,
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			query, err := NewExpressionBuilder("table").
+				BuildBatchGetItemInput(tc.input...)
+
+			assert.Equal(t, tc.hasError, err != nil)
+			assert.Equal(t, !tc.hasError, query != nil)
+			if query != nil {
+				assert.Equal(t, !tc.hasError, len(query.RequestItems) == len(tc.input))
+			}
+		})
+	}
+}

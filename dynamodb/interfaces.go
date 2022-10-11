@@ -41,13 +41,19 @@ type EntityMarshaler[T any] interface {
 
 // Queries ...
 type Queries[T EntityMarshaler[T]] interface {
-	GetItem(context.Context, DynamoPrimaryKey) (*T, error)
-	GetItems(context.Context, []DynamoPrimaryKey) ([]T, []DynamoPrimaryKey, error)
+	// GetItem extracts and returns an item by its (partition, (sort)?) key.
+	GetItem(ctx context.Context, primaryKey DynamoPrimaryKey) (item *T, err error)
+
+	// GetItems returns extracted items by their (partition, (sort)?) keys, the unprocessed keys and/or the error if any.
+	GetItems(ctx context.Context, keys []DynamoPrimaryKey) (items []T, unprocessedKeys []DynamoPrimaryKey, err error)
 }
 
 // Commands ..
 type Commands[T EntityMarshaler[T]] interface {
+	// Create inserts a new item to dynamo table and returns the item's (partition, (sort)?) key.
 	Create(context.Context, T) (DynamoPrimaryKey, error)
+	// Update updates a dynamo existing item.
 	Update(context.Context, DynamoPrimaryKey, []DynamoAttribute) error
+	// Delete deletes a dynamo item
 	Delete(context.Context, DynamoPrimaryKey) error
 }

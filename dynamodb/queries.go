@@ -3,6 +3,7 @@ package dynamodb
 import (
 	"awsgo/utils"
 	"context"
+	"sync"
 )
 
 type resp[T any] struct {
@@ -48,11 +49,18 @@ func (d *dynamodbWrapper[T]) GetByIDs(ctx context.Context, ids []DynamoPrimaryKe
 	partitions := utils.Partition(ids, 25)
 
 	ch := make(chan resp[T])
-	defer close(ch)
+
+	wg := &sync.WaitGroup{}
 
 	for part := range partitions {
-		go d.load(ctx, ch, part...)
+		wg.Add(1)
+		go d.load(ctx, wg, ch, part...)
 	}
+
+	go func(wg *sync.WaitGroup, ch chan resp[T]) {
+		wg.Wait()
+		close(ch)
+	}(wg, ch)
 
 	res := make([]T, 0, len(ids))
 	for out := range ch {
@@ -66,7 +74,8 @@ func (d *dynamodbWrapper[T]) GetByIDs(ctx context.Context, ids []DynamoPrimaryKe
 	return res, nil
 }
 
-func (d *dynamodbWrapper[T]) load(ctx context.Context, ch chan<- resp[T], ids ...DynamoPrimaryKey) {
+func (d *dynamodbWrapper[T]) load(ctx context.Context, wg *sync.WaitGroup, ch chan<- resp[T], ids ...DynamoPrimaryKey) {
+	defer wg.Done()
 	// build the batch get item query
 	query, err := NewExpressionBuilder(d.conf.TableInfo.TableName).BuildBatchGetItemInput(ids...)
 	if err != nil {

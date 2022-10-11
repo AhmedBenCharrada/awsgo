@@ -145,3 +145,100 @@ func TestGet(t *testing.T) {
 		})
 	}
 }
+
+func TestGetByIDs(t *testing.T) {
+	validDbConfig := dynamo.DBConfig{
+		TableInfo: dynamo.TableInfo{
+			TableName: "tableName",
+			PrimaryKey: dynamo.DBPrimaryKeyNames{
+				PartitionKey: dynamo.DynamoKeyMetadata{
+					Name:    "group_id",
+					KeyType: dynamo.String,
+				},
+				SortKey: &dynamo.DynamoKeyMetadata{
+					Name:    "id",
+					KeyType: dynamo.Number,
+				},
+			},
+		},
+	}
+
+	dbWithNoError := mocks.DBClient{}
+	dbWithNoError.On("BatchGetItemWithContext", mock.Anything, mock.Anything).Return(&dynamodb.BatchGetItemOutput{
+		Responses: map[string][]map[string]*dynamodb.AttributeValue{
+			validDbConfig.TableInfo.TableName: {
+				map[string]*dynamodb.AttributeValue{
+					"id":         {S: aws.String("123")},
+					"group_id":   {N: aws.String("1234")},
+					"enabled":    {BOOL: aws.Bool(true)},
+					"first_name": {S: aws.String("name")},
+					"last_name":  {S: aws.String("l_name")},
+				},
+			},
+		},
+	}, nil)
+
+	dbWithError := mocks.DBClient{}
+	dbWithError.On("BatchGetItemWithContext", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("error"))
+
+	dbWithNotFoundItem := mocks.DBClient{}
+	dbWithNotFoundItem.On("BatchGetItemWithContext", mock.Anything, mock.Anything).Return(&dynamodb.BatchGetItemOutput{
+		Responses: map[string][]map[string]*dynamodb.AttributeValue{
+			validDbConfig.TableInfo.TableName: {},
+		},
+	}, nil)
+
+	validKeys := []dynamo.DynamoPrimaryKey{
+		{
+			PartitionKey: dynamo.DynamoAttribute{
+				KeyName: "group_id",
+				KeyType: dynamo.String,
+				Value:   "123",
+			},
+			SortKey: &dynamo.DynamoAttribute{
+				KeyName: "id",
+				KeyType: dynamo.String,
+				Value:   "12345",
+			},
+		},
+	}
+
+	cases := []struct {
+		name       string
+		dbClient   dynamo.DBClient
+		keys       []dynamo.DynamoPrimaryKey
+		itemsCount int
+		hasError   bool
+	}{
+		{
+			name:       "successfully",
+			dbClient:   &dbWithNoError,
+			keys:       validKeys,
+			itemsCount: 1,
+		},
+
+		{
+			name:     "with db error",
+			dbClient: &dbWithError,
+			keys:     validKeys,
+			hasError: true,
+		},
+		{
+			name:       "with not found item",
+			dbClient:   &dbWithNotFoundItem,
+			keys:       validKeys,
+			itemsCount: 0,
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			db := dynamo.NewDynamoWrapper[entity](tc.dbClient, validDbConfig)
+
+			items, err := db.GetByIDs(context.Background(), tc.keys)
+			assert.Equal(t, !tc.hasError, err == nil)
+			assert.Equal(t, tc.itemsCount, len(items))
+		})
+	}
+}

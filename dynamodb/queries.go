@@ -13,7 +13,7 @@ type resp[T any] struct {
 }
 
 // Get implements Queries
-func (d *dynamodbWrapper[T]) Get(ctx context.Context, primaryKey DynamoPrimaryKey) (*T, error) {
+func (d *dynamodbWrapper[T]) GetItem(ctx context.Context, primaryKey DynamoPrimaryKey) (*T, error) {
 	// prepare the partition and the sort keys
 	partKey, sortKey, err := preparePartSortKey(primaryKey)
 	if err != nil {
@@ -45,7 +45,7 @@ func (d *dynamodbWrapper[T]) Get(ctx context.Context, primaryKey DynamoPrimaryKe
 }
 
 // GetByIDs implements Queries
-func (d *dynamodbWrapper[T]) GetByIDs(ctx context.Context, ids []DynamoPrimaryKey) ([]T, error) {
+func (d *dynamodbWrapper[T]) GetItems(ctx context.Context, ids []DynamoPrimaryKey) ([]T, error) {
 	partitions := utils.Partition(ids, 25)
 
 	ch := make(chan resp[T])

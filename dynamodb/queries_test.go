@@ -216,7 +216,6 @@ func TestGetByIDs(t *testing.T) {
 			keys:       validKeys,
 			itemsCount: 1,
 		},
-
 		{
 			name:     "with db error",
 			dbClient: &dbWithError,
@@ -228,6 +227,40 @@ func TestGetByIDs(t *testing.T) {
 			dbClient:   &dbWithNotFoundItem,
 			keys:       validKeys,
 			itemsCount: 0,
+		},
+		{
+			name:     "with invalid key",
+			dbClient: &dbWithNoError,
+			keys: []dynamo.DynamoPrimaryKey{
+				{
+					PartitionKey: dynamo.DynamoAttribute{
+						KeyName: "group_id",
+						KeyType: dynamo.DBKeyType(99), // invalid key type
+						Value:   "123",
+					},
+				},
+			},
+			hasError: true,
+		},
+		{
+			name: "with wrong response structure",
+			dbClient: func() dynamo.DBClient {
+				m := mocks.DBClient{}
+				m.On("BatchGetItemWithContext", mock.Anything, mock.Anything).Return(&dynamodb.BatchGetItemOutput{
+					Responses: map[string][]map[string]*dynamodb.AttributeValue{
+						validDbConfig.TableInfo.TableName: {
+							map[string]*dynamodb.AttributeValue{
+								"userID":    {S: aws.String("123")},
+								"user_name": {S: aws.String("name")},
+							},
+						},
+					},
+				}, nil)
+
+				return &m
+			}(),
+			keys:     validKeys,
+			hasError: true,
 		},
 	}
 

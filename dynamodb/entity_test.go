@@ -1,6 +1,8 @@
 package dynamodb_test
 
 import (
+	"fmt"
+
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 )
@@ -13,11 +15,22 @@ type entity struct {
 	LastName  string `json:"last_name"`
 }
 
+func (e entity) isEmpty() bool {
+	return len(e.ID) == 0 && e.GroupID == nil && e.Enabled == nil && len(e.FirstName) == 0 && len(e.LastName) == 0
+}
+
 func (e entity) Marshal() (map[string]*dynamodb.AttributeValue, error) {
 	return dynamodbattribute.MarshalMap(e)
 }
 
 func (e entity) UnMarshal(data map[string]*dynamodb.AttributeValue) (entity, error) {
-	err := dynamodbattribute.UnmarshalMap(data, &e)
-	return e, err
+	if err := dynamodbattribute.UnmarshalMap(data, &e); err != nil {
+		return e, err
+	}
+
+	if e.isEmpty() {
+		return e, fmt.Errorf("invalid data")
+	}
+
+	return e, nil
 }

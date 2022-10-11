@@ -42,7 +42,7 @@ type EntityMarshaler[T any] interface {
 // Queries ...
 type Queries[T EntityMarshaler[T]] interface {
 	GetItem(context.Context, DynamoPrimaryKey) (*T, error)
-	GetItems(context.Context, []DynamoPrimaryKey) ([]T, error)
+	GetItems(context.Context, []DynamoPrimaryKey) ([]T, []DynamoPrimaryKey, error)
 }
 
 // Commands ..

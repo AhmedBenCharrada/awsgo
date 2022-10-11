@@ -45,7 +45,7 @@ func (d *dynamodbWrapper[T]) GetItem(ctx context.Context, primaryKey DynamoPrima
 }
 
 // GetByIDs implements Queries
-func (d *dynamodbWrapper[T]) GetItems(ctx context.Context, ids []DynamoPrimaryKey) ([]T, error) {
+func (d *dynamodbWrapper[T]) GetItems(ctx context.Context, ids []DynamoPrimaryKey) ([]T, []DynamoPrimaryKey, error) {
 	partitions := utils.Partition(ids, 25)
 
 	ch := make(chan resp[T])
@@ -63,15 +63,18 @@ func (d *dynamodbWrapper[T]) GetItems(ctx context.Context, ids []DynamoPrimaryKe
 	}(wg, ch)
 
 	res := make([]T, 0, len(ids))
+	unprocessedKeys := make([]DynamoPrimaryKey, 0, len(ids))
+
 	for out := range ch {
 		if out.err != nil {
-			return nil, out.err
+			return nil, ids, out.err
 		}
 
 		res = append(res, out.data...)
+		unprocessedKeys = append(unprocessedKeys, out.unprocessedKeys...)
 	}
 
-	return res, nil
+	return res, unprocessedKeys, nil
 }
 
 func (d *dynamodbWrapper[T]) load(ctx context.Context, wg *sync.WaitGroup, ch chan<- resp[T], ids ...DynamoPrimaryKey) {

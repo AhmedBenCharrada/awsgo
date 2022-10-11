@@ -269,7 +269,7 @@ func TestGetByIDs(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			db := dynamo.NewDynamoWrapper[entity](tc.dbClient, validDbConfig)
 
-			items, err := db.GetItems(context.Background(), tc.keys)
+			items, _, err := db.GetItems(context.Background(), tc.keys)
 			assert.Equal(t, !tc.hasError, err == nil)
 			assert.Equal(t, tc.itemsCount, len(items))
 		})

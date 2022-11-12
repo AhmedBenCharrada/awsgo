@@ -1,6 +1,7 @@
 package dynamodb
 
 import (
+	"fmt"
 	"math/rand"
 	"strconv"
 	"time"
@@ -111,6 +112,54 @@ func newDynamoAttributeValue(value interface{}, KeyType DBKeyType) (*dynamodb.At
 	}
 
 	return nil, ErrInvalidDBKeyType
+}
+
+func extractUnprocessedKeys(keys []map[string]*dynamodb.AttributeValue, partitionKey DynamoKeyMetadata, sortKeyMeta *DynamoKeyMetadata) ([]DynamoPrimaryKey, error) {
+	primaryKeys := make([]DynamoPrimaryKey, 0)
+	for _, key := range keys {
+		partKey := getDynamoAttribute(key, partitionKey)
+		var sortKey *DynamoAttribute
+
+		if sortKeyMeta != nil {
+			sortKey = getDynamoAttribute(key, *sortKeyMeta)
+		}
+
+		if partKey == nil || (sortKey == nil && sortKeyMeta != nil) {
+			return nil, fmt.Errorf("error while extracting unprocessed keys")
+		}
+
+		primaryKeys = append(primaryKeys, DynamoPrimaryKey{
+			PartitionKey: *partKey,
+			SortKey:      sortKey,
+		})
+	}
+
+	return primaryKeys, nil
+}
+
+func getDynamoAttribute(attributes map[string]*dynamodb.AttributeValue, meta DynamoKeyMetadata) *DynamoAttribute {
+	attr := attributes[string(meta.Name)]
+	if attr == nil {
+		return nil
+	}
+
+	val, _ := getValueOf(*attr, meta.KeyType)
+	return &DynamoAttribute{
+		KeyName: meta.Name,
+		KeyType: meta.KeyType,
+		Value:   val,
+	}
+}
+
+func extractMetadata(attrib *DynamoAttribute) *DynamoKeyMetadata {
+	if attrib == nil {
+		return nil
+	}
+
+	return &DynamoKeyMetadata{
+		Name:    attrib.KeyName,
+		KeyType: attrib.KeyType,
+	}
 }
 
 func getValueOf(attribute dynamodb.AttributeValue, DBKeyType DBKeyType) (val interface{}, empty bool) {

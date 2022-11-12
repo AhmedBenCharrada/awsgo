@@ -122,10 +122,11 @@ func (d *dynamodbWrapper[T]) load(ctx context.Context, wg *sync.WaitGroup, ch ch
 		data: data,
 	}
 
+	// Todo: add test coverage
 	if out.UnprocessedKeys != nil && len(out.UnprocessedKeys[d.conf.TableInfo.TableName].Keys) > 0 {
-		// Todo convert unprocessed keys to DynamoPrimaryKey
-		// extract the key metadata from the passed keys (ids): { partitionKeyName, partitionKeyType , (sortKeyName, sortKeyType)?}
-		res.unprocessedKeys = []DynamoPrimaryKey{}
+		partKeyMeta := extractMetadata(&ids[0].PartitionKey)
+		sortKeyMeta := extractMetadata(ids[0].SortKey)
+		res.unprocessedKeys, res.err = extractUnprocessedKeys(out.UnprocessedKeys[d.conf.TableInfo.TableName].Keys, *partKeyMeta, sortKeyMeta)
 	}
 
 	ch <- res

@@ -218,6 +218,12 @@ func TestGetByIDs(t *testing.T) {
 			itemsCount: 1,
 		},
 		{
+			name:       "with empty ids",
+			dbClient:   &dbWithNoError,
+			keys:       make([]dynamo.DynamoPrimaryKey, 0),
+			itemsCount: 0,
+		},
+		{
 			name:                "with db error",
 			dbClient:            &dbWithError,
 			keys:                validKeys,

@@ -80,12 +80,6 @@ func (d *dynamodbWrapper[T]) GetItems(ctx context.Context, ids []DynamoPrimaryKe
 func (d *dynamodbWrapper[T]) load(ctx context.Context, wg *sync.WaitGroup, ch chan<- resp[T], ids ...DynamoPrimaryKey) {
 	defer wg.Done()
 
-	// return if no id is provided.
-	if len(ids) == 0 {
-		ch <- resp[T]{}
-		return
-	}
-
 	// build the batch get item query
 	query, err := NewExpressionBuilder(d.conf.TableInfo.TableName).BuildBatchGetItemInput(ids...)
 	if err != nil {
@@ -122,7 +116,6 @@ func (d *dynamodbWrapper[T]) load(ctx context.Context, wg *sync.WaitGroup, ch ch
 		data: data,
 	}
 
-	// Todo: add test coverage
 	if out.UnprocessedKeys != nil && len(out.UnprocessedKeys[d.conf.TableInfo.TableName].Keys) > 0 {
 		partKeyMeta := extractMetadata(&ids[0].PartitionKey)
 		sortKeyMeta := extractMetadata(ids[0].SortKey)

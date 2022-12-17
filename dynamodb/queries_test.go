@@ -344,6 +344,87 @@ func TestGetByIDs(t *testing.T) {
 			remainingItemsCount: 1,
 			hasError:            true,
 		},
+		{
+			name: "with nil UnprocessedKeys",
+			dbClient: func() dynamo.DBClient {
+				m := mocks.DBClient{}
+				m.On("BatchGetItemWithContext", mock.Anything, mock.Anything).Return(&dynamodb.BatchGetItemOutput{
+					Responses: map[string][]map[string]*dynamodb.AttributeValue{
+						validDbConfig.TableInfo.TableName: {
+							map[string]*dynamodb.AttributeValue{
+								"id":         {S: aws.String("123")},
+								"group_id":   {N: aws.String("1234")},
+								"enabled":    {BOOL: aws.Bool(true)},
+								"first_name": {S: aws.String("name")},
+								"last_name":  {S: aws.String("l_name")},
+							},
+						},
+					},
+					UnprocessedKeys: nil,
+				}, nil)
+
+				return &m
+			}(),
+			keys:                validKeys,
+			itemsCount:          1,
+			remainingItemsCount: 0,
+		},
+		{
+			name: "with nil UnprocessedKeys for the selected table",
+			dbClient: func() dynamo.DBClient {
+				m := mocks.DBClient{}
+				m.On("BatchGetItemWithContext", mock.Anything, mock.Anything).Return(&dynamodb.BatchGetItemOutput{
+					Responses: map[string][]map[string]*dynamodb.AttributeValue{
+						validDbConfig.TableInfo.TableName: {
+							map[string]*dynamodb.AttributeValue{
+								"id":         {S: aws.String("123")},
+								"group_id":   {N: aws.String("1234")},
+								"enabled":    {BOOL: aws.Bool(true)},
+								"first_name": {S: aws.String("name")},
+								"last_name":  {S: aws.String("l_name")},
+							},
+						},
+					},
+					UnprocessedKeys: map[string]*dynamodb.KeysAndAttributes{
+						validDbConfig.TableInfo.TableName: nil,
+					},
+				}, nil)
+
+				return &m
+			}(),
+			keys:                validKeys,
+			itemsCount:          1,
+			remainingItemsCount: 0,
+		},
+		{
+			name: "with empty UnprocessedKeys for the selected table",
+			dbClient: func() dynamo.DBClient {
+				m := mocks.DBClient{}
+				m.On("BatchGetItemWithContext", mock.Anything, mock.Anything).Return(&dynamodb.BatchGetItemOutput{
+					Responses: map[string][]map[string]*dynamodb.AttributeValue{
+						validDbConfig.TableInfo.TableName: {
+							map[string]*dynamodb.AttributeValue{
+								"id":         {S: aws.String("123")},
+								"group_id":   {N: aws.String("1234")},
+								"enabled":    {BOOL: aws.Bool(true)},
+								"first_name": {S: aws.String("name")},
+								"last_name":  {S: aws.String("l_name")},
+							},
+						},
+					},
+					UnprocessedKeys: map[string]*dynamodb.KeysAndAttributes{
+						validDbConfig.TableInfo.TableName: {
+							Keys: []map[string]*dynamodb.AttributeValue{},
+						},
+					},
+				}, nil)
+
+				return &m
+			}(),
+			keys:                validKeys,
+			itemsCount:          1,
+			remainingItemsCount: 0,
+		},
 	}
 
 	for _, tc := range cases {

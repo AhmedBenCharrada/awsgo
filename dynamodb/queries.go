@@ -116,11 +116,24 @@ func (d *dynamodbWrapper[T]) load(ctx context.Context, wg *sync.WaitGroup, ch ch
 		data: data,
 	}
 
-	if out.UnprocessedKeys != nil && len(out.UnprocessedKeys[d.conf.TableInfo.TableName].Keys) > 0 {
-		partKeyMeta := extractMetadata(&ids[0].PartitionKey)
-		sortKeyMeta := extractMetadata(ids[0].SortKey)
-		res.unprocessedKeys, res.err = extractUnprocessedKeys(out.UnprocessedKeys[d.conf.TableInfo.TableName].Keys, *partKeyMeta, sortKeyMeta)
+	if out.UnprocessedKeys == nil {
+		ch <- res
+		return
 	}
+
+	if out.UnprocessedKeys[d.conf.TableInfo.TableName] == nil {
+		ch <- res
+		return
+	}
+
+	if len(out.UnprocessedKeys[d.conf.TableInfo.TableName].Keys) == 0 {
+		ch <- res
+		return
+	}
+
+	partKeyMeta := extractMetadata(&ids[0].PartitionKey)
+	sortKeyMeta := extractMetadata(ids[0].SortKey)
+	res.unprocessedKeys, res.err = extractUnprocessedKeys(out.UnprocessedKeys[d.conf.TableInfo.TableName].Keys, *partKeyMeta, sortKeyMeta)
 
 	ch <- res
 }

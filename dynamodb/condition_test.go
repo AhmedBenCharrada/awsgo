@@ -24,4 +24,10 @@ func TestCreateConditionBuilder(t *testing.T) {
 		Or("attrib4", "val", dynamodb.LE)
 
 	assert.NotNil(t, cb2)
+
+	f := cb.Merge(*cb2)
+	assert.NotNil(t, f)
+
+	e := f.GetExpression()
+	assert.NotEmpty(t, e)
 }

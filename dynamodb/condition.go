@@ -27,6 +27,11 @@ func NewConditionBuilder() *ConditionBuilder {
 	}
 }
 
+// GetExpression returns dynamo Filter Expressions
+func (cb *ConditionBuilder) GetExpression() expression.ConditionBuilder {
+	return cb.builder
+}
+
 // Or applies the OR condition for the dynamo attribute
 func (cb *ConditionBuilder) Or(attribName string, value interface{}, operator Operator) *ConditionBuilder {
 	cond := cb.builder.Or(create(attribName, value, operator))
@@ -38,6 +43,15 @@ func (cb *ConditionBuilder) Or(attribName string, value interface{}, operator Op
 func (cb *ConditionBuilder) And(attribName string, value interface{}, operator Operator) *ConditionBuilder {
 	cond := cb.builder.And(create(attribName, value, operator))
 	cb.builder = cond
+	return cb
+}
+
+// Merge applies the logical And clause for all conditions.
+func (cb *ConditionBuilder) Merge(conditions ...ConditionBuilder) *ConditionBuilder {
+	for _, cond := range conditions {
+		cb.builder.And(cond.builder)
+	}
+
 	return cb
 }
 

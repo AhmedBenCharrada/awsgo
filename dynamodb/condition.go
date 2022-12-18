@@ -18,12 +18,14 @@ const (
 )
 
 type ConditionBuilder struct {
+	isEmpty bool
 	builder expression.ConditionBuilder
 }
 
 func NewConditionBuilder() *ConditionBuilder {
 	return &ConditionBuilder{
-		expression.ConditionBuilder{},
+		isEmpty: true,
+		builder: expression.ConditionBuilder{},
 	}
 }
 
@@ -34,6 +36,12 @@ func (cb *ConditionBuilder) GetExpression() expression.ConditionBuilder {
 
 // Or applies the OR condition for the dynamo attribute
 func (cb *ConditionBuilder) Or(attribName string, value interface{}, operator Operator) *ConditionBuilder {
+	if cb.isEmpty {
+		cb.builder = create(attribName, value, operator)
+		cb.isEmpty = false
+		return cb
+	}
+
 	cond := cb.builder.Or(create(attribName, value, operator))
 	cb.builder = cond
 	return cb
@@ -41,6 +49,12 @@ func (cb *ConditionBuilder) Or(attribName string, value interface{}, operator Op
 
 // And applies the AND condition for the dynamo attribute
 func (cb *ConditionBuilder) And(attribName string, value interface{}, operator Operator) *ConditionBuilder {
+	if cb.isEmpty {
+		cb.builder = create(attribName, value, operator)
+		cb.isEmpty = false
+		return cb
+	}
+
 	cond := cb.builder.And(create(attribName, value, operator))
 	cb.builder = cond
 	return cb

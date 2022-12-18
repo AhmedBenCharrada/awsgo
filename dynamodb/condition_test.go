@@ -17,11 +17,12 @@ func TestCreateConditionBuilder(t *testing.T) {
 
 	assert.NotNil(t, cb)
 
-	cb2 := dynamodb.NewConditionBuilder().And("attrib1", "some-value", dynamodb.EQUAL).
+	cb2 := dynamodb.NewConditionBuilder().
 		Or("attrib2", "val", dynamodb.GT).
 		Or("attrib3", "val", dynamodb.GE).
 		Or("attrib4", "val", dynamodb.LT).
-		Or("attrib4", "val", dynamodb.LE)
+		Or("attrib4", "val", dynamodb.LE).
+		And("attrib1", "some-value", dynamodb.EQUAL)
 
 	assert.NotNil(t, cb2)
 

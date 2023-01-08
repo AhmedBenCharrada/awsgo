@@ -145,6 +145,28 @@ func (b *dynamoExpressionBuilder) BuildBatchGetItemInput(keys ...DynamoPrimaryKe
 	}, nil
 }
 
+// BuildScanInput builds the dynamo scan input.
+func (b *dynamoExpressionBuilder) BuildScanInput(filter *ConditionBuilder) (*dynamodb.ScanInput, error) {
+	if filter == nil {
+		return &dynamodb.ScanInput{
+			TableName: aws.String(b.tableName),
+		}, nil
+	}
+
+	builder := expression.NewBuilder()
+	builder = builder.WithFilter(filter.GetExpression())
+
+	expr, err := builder.Build()
+
+	return &dynamodb.ScanInput{
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		FilterExpression:          expr.Filter(),
+		ProjectionExpression:      expr.Projection(),
+		TableName:                 aws.String(b.tableName),
+	}, err
+}
+
 func (b *dynamoExpressionBuilder) validateKeys() error {
 	if b.partKey.IsEmpty() {
 		return ErrInvalidPartitionKey

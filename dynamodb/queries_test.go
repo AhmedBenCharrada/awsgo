@@ -54,7 +54,7 @@ func TestFind(t *testing.T) {
 	cases := []struct {
 		name       string
 		dbClient   dynamo.DBClient
-		conditions []dynamo.ConditionBuilder
+		conditions []dynamo.Criteria
 		itemsCount int
 		hasError   bool
 	}{
@@ -74,7 +74,7 @@ func TestFind(t *testing.T) {
 		{
 			name:     "with 1 condition",
 			dbClient: &dbWithNoError,
-			conditions: []dynamo.ConditionBuilder{*dynamo.NewConditionBuilder().
+			conditions: []dynamo.Criteria{*dynamo.NewCriteria().
 				And("first_name", "name", dynamo.EQUAL),
 			},
 			itemsCount: 1,
@@ -82,9 +82,9 @@ func TestFind(t *testing.T) {
 		{
 			name:     "with 2 condition",
 			dbClient: &dbWithNoError,
-			conditions: []dynamo.ConditionBuilder{*dynamo.NewConditionBuilder().
+			conditions: []dynamo.Criteria{*dynamo.NewCriteria().
 				And("first_name", "name", dynamo.EQUAL),
-				*dynamo.NewConditionBuilder().
+				*dynamo.NewCriteria().
 					And("last_name", "l_name", dynamo.GT)},
 			itemsCount: 1,
 		},

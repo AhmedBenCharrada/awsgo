@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCreateConditionBuilder(t *testing.T) {
-	cb := dynamodb.NewConditionBuilder().
+func TestCreateCriteria(t *testing.T) {
+	cb := dynamodb.NewCriteria().
 		And("attrib1", "some-value", dynamodb.EQUAL).
 		And("attrib2", "val", dynamodb.GT).
 		And("attrib3", "val", dynamodb.GE).
@@ -17,7 +17,7 @@ func TestCreateConditionBuilder(t *testing.T) {
 
 	assert.NotNil(t, cb)
 
-	cb2 := dynamodb.NewConditionBuilder().
+	cb2 := dynamodb.NewCriteria().
 		Or("attrib2", "val", dynamodb.GT).
 		Or("attrib3", "val", dynamodb.GE).
 		Or("attrib4", "val", dynamodb.LT).

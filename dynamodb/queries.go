@@ -15,7 +15,7 @@ type resp[T any] struct {
 }
 
 // Find implements Queries
-func (d *dynamodbWrapper[T]) Find(ctx context.Context, conditions ...ConditionBuilder) ([]T, error) {
+func (d *dynamodbWrapper[T]) Find(ctx context.Context, conditions ...Criteria) ([]T, error) {
 	cb := mergeConditions(conditions)
 
 	// initialize the expression builder
@@ -178,7 +178,7 @@ func (d *dynamodbWrapper[T]) parse(items []map[string]*dynamodb.AttributeValue) 
 	return data, nil
 }
 
-func mergeConditions(conditions []ConditionBuilder) *ConditionBuilder {
+func mergeConditions(conditions []Criteria) *Criteria {
 	if len(conditions) == 0 {
 		return nil
 	}

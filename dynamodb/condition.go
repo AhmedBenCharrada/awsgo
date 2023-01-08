@@ -17,25 +17,25 @@ const (
 	GE
 )
 
-type ConditionBuilder struct {
+type Criteria struct {
 	isEmpty bool
 	builder expression.ConditionBuilder
 }
 
-func NewConditionBuilder() *ConditionBuilder {
-	return &ConditionBuilder{
+func NewCriteria() *Criteria {
+	return &Criteria{
 		isEmpty: true,
 		builder: expression.ConditionBuilder{},
 	}
 }
 
 // GetExpression returns dynamo Filter Expressions
-func (cb *ConditionBuilder) GetExpression() expression.ConditionBuilder {
+func (cb *Criteria) GetExpression() expression.ConditionBuilder {
 	return cb.builder
 }
 
 // Or applies the OR condition for the dynamo attribute
-func (cb *ConditionBuilder) Or(attribName string, value interface{}, operator Operator) *ConditionBuilder {
+func (cb *Criteria) Or(attribName string, value interface{}, operator Operator) *Criteria {
 	if cb.isEmpty {
 		cb.builder = create(attribName, value, operator)
 		cb.isEmpty = false
@@ -48,7 +48,7 @@ func (cb *ConditionBuilder) Or(attribName string, value interface{}, operator Op
 }
 
 // And applies the AND condition for the dynamo attribute
-func (cb *ConditionBuilder) And(attribName string, value interface{}, operator Operator) *ConditionBuilder {
+func (cb *Criteria) And(attribName string, value interface{}, operator Operator) *Criteria {
 	if cb.isEmpty {
 		cb.builder = create(attribName, value, operator)
 		cb.isEmpty = false
@@ -61,7 +61,7 @@ func (cb *ConditionBuilder) And(attribName string, value interface{}, operator O
 }
 
 // Merge applies the logical And clause for all conditions.
-func (cb *ConditionBuilder) Merge(conditions ...ConditionBuilder) *ConditionBuilder {
+func (cb *Criteria) Merge(conditions ...Criteria) *Criteria {
 	for _, cond := range conditions {
 		cb.builder.And(cond.builder)
 	}

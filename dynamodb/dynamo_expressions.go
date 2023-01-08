@@ -146,7 +146,7 @@ func (b *dynamoExpressionBuilder) BuildBatchGetItemInput(keys ...DynamoPrimaryKe
 }
 
 // BuildScanInput builds the dynamo scan input.
-func (b *dynamoExpressionBuilder) BuildScanInput(filter *ConditionBuilder) (*dynamodb.ScanInput, error) {
+func (b *dynamoExpressionBuilder) BuildScanInput(filter *Criteria) (*dynamodb.ScanInput, error) {
 	if filter == nil {
 		return &dynamodb.ScanInput{
 			TableName: aws.String(b.tableName),

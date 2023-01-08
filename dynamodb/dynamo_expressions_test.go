@@ -298,7 +298,7 @@ func TestBuildScanInput(t *testing.T) {
 	})
 
 	t.Run("with filter", func(t *testing.T) {
-		filter := NewConditionBuilder().And("attrib1", "some-value", EQUAL).
+		filter := NewCriteria().And("attrib1", "some-value", EQUAL).
 			Or("attrib2", "val", GT)
 
 		input, err := NewExpressionBuilder("table").

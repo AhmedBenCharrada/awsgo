@@ -4,12 +4,43 @@ import (
 	"awsgo/utils"
 	"context"
 	"sync"
+
+	"github.com/aws/aws-sdk-go/service/dynamodb"
 )
 
 type resp[T any] struct {
 	data            []T
 	unprocessedKeys []DynamoPrimaryKey
 	err             error
+}
+
+// Find search and retrieve all items that matches the provided condition(s).
+// Todo: Add pagination
+func (d *dynamodbWrapper[T]) Find(ctx context.Context, conditions ...ConditionBuilder) ([]T, error) {
+	cb := mergeConditions(conditions)
+
+	// initialize the expression builder
+	builder := NewExpressionBuilder(d.conf.TableInfo.TableName)
+
+	req, _ := builder.BuildScanInput(cb)
+
+	out, err := d.client.ScanWithContext(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	// parse response and accumulate returned items
+	data := make([]T, 0, len(out.Items))
+	for _, item := range out.Items {
+		entity, err := (*new(T)).UnMarshal(item)
+		if err != nil {
+			return nil, err
+		}
+
+		data = append(data, entity)
+	}
+
+	return data, nil
 }
 
 // Get implements Queries
@@ -99,17 +130,12 @@ func (d *dynamodbWrapper[T]) load(ctx context.Context, wg *sync.WaitGroup, ch ch
 	}
 
 	// parse response and accumulate returned items
-	data := make([]T, 0, len(out.Responses[d.conf.TableInfo.TableName]))
-	for _, item := range out.Responses[d.conf.TableInfo.TableName] {
-		entity, err := (*new(T)).UnMarshal(item)
-		if err != nil {
-			ch <- resp[T]{
-				err: err,
-			}
-			return
+	data, err := d.parse(out.Responses[d.conf.TableInfo.TableName])
+	if err != nil {
+		ch <- resp[T]{
+			err: err,
 		}
-
-		data = append(data, entity)
+		return
 	}
 
 	res := resp[T]{
@@ -136,4 +162,32 @@ func (d *dynamodbWrapper[T]) load(ctx context.Context, wg *sync.WaitGroup, ch ch
 	res.unprocessedKeys, res.err = extractUnprocessedKeys(out.UnprocessedKeys[d.conf.TableInfo.TableName].Keys, *partKeyMeta, sortKeyMeta)
 
 	ch <- res
+}
+
+func (d *dynamodbWrapper[T]) parse(items []map[string]*dynamodb.AttributeValue) ([]T, error) {
+	// parse response and accumulate returned items
+	data := make([]T, 0, len(items))
+	for _, item := range items {
+		entity, err := (*new(T)).UnMarshal(item)
+		if err != nil {
+			return nil, err
+		}
+
+		data = append(data, entity)
+	}
+
+	return data, nil
+}
+
+func mergeConditions(conditions []ConditionBuilder) *ConditionBuilder {
+	if len(conditions) == 0 {
+		return nil
+	}
+
+	if len(conditions) == 1 {
+		return &conditions[0]
+	}
+
+	cond := conditions[0]
+	return cond.Merge(conditions[1:]...)
 }

@@ -13,6 +13,114 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+func TestFind(t *testing.T) {
+	dbConfig := dynamo.DBConfig{
+		TableInfo: dynamo.TableInfo{
+			TableName: "",
+			PrimaryKey: dynamo.DBPrimaryKeyNames{
+				PartitionKey: dynamo.DynamoKeyMetadata{
+					Name:    "group_id",
+					KeyType: dynamo.String,
+				},
+				SortKey: &dynamo.DynamoKeyMetadata{
+					Name:    "id",
+					KeyType: dynamo.Number,
+				},
+			},
+		},
+	}
+
+	dbWithNoError := mocks.DBClient{}
+	dbWithNoError.On("ScanWithContext", mock.Anything, mock.Anything).Return(&dynamodb.ScanOutput{
+		Items: []map[string]*dynamodb.AttributeValue{
+			{
+				"id":         {S: aws.String("123")},
+				"group_id":   {N: aws.String("1234")},
+				"enabled":    {BOOL: aws.Bool(true)},
+				"first_name": {S: aws.String("name")},
+				"last_name":  {S: aws.String("l_name")},
+			},
+		},
+	}, nil)
+
+	dbWithError := mocks.DBClient{}
+	dbWithError.On("ScanWithContext", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("error"))
+
+	dbWithNotFoundItem := mocks.DBClient{}
+	dbWithNotFoundItem.On("ScanWithContext", mock.Anything, mock.Anything).Return(&dynamodb.ScanOutput{
+		Items: []map[string]*dynamodb.AttributeValue{},
+	}, nil)
+
+	cases := []struct {
+		name       string
+		dbClient   dynamo.DBClient
+		conditions []dynamo.ConditionBuilder
+		itemsCount int
+		hasError   bool
+	}{
+		{
+			name:       "successfully",
+			dbClient:   &dbWithNoError,
+			conditions: nil,
+			itemsCount: 1,
+		},
+		{
+			name:       "with error",
+			dbClient:   &dbWithError,
+			conditions: nil,
+			itemsCount: 0,
+			hasError:   true,
+		},
+		{
+			name:     "with 1 condition",
+			dbClient: &dbWithNoError,
+			conditions: []dynamo.ConditionBuilder{*dynamo.NewConditionBuilder().
+				And("first_name", "name", dynamo.EQUAL),
+			},
+			itemsCount: 1,
+		},
+		{
+			name:     "with 2 condition",
+			dbClient: &dbWithNoError,
+			conditions: []dynamo.ConditionBuilder{*dynamo.NewConditionBuilder().
+				And("first_name", "name", dynamo.EQUAL),
+				*dynamo.NewConditionBuilder().
+					And("last_name", "l_name", dynamo.GT)},
+			itemsCount: 1,
+		},
+		{
+			name: "with unmarshal error",
+			dbClient: func() dynamo.DBClient {
+				db := &mocks.DBClient{}
+				db.On("ScanWithContext", mock.Anything, mock.Anything).Return(&dynamodb.ScanOutput{
+					Items: []map[string]*dynamodb.AttributeValue{
+						{
+							"name":        {S: aws.String("name")},
+							"family_name": {S: aws.String("l_name")},
+						},
+					},
+				}, nil)
+
+				return db
+			}(),
+			conditions: nil,
+			itemsCount: 0,
+			hasError:   true,
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			db := dynamo.NewDynamoWrapper[entity](tc.dbClient, dbConfig)
+
+			items, err := db.Find(context.Background(), tc.conditions...)
+			assert.Equal(t, !tc.hasError, err == nil)
+			assert.Equal(t, tc.itemsCount, len(items))
+		})
+	}
+}
+
 func TestGet(t *testing.T) {
 	validDbConfig := dynamo.DBConfig{
 		TableInfo: dynamo.TableInfo{

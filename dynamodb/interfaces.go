@@ -41,6 +41,10 @@ type EntityMarshaler[T any] interface {
 
 // Queries ...
 type Queries[T EntityMarshaler[T]] interface {
+	// Find retrieves all items that match the provided condition(s).
+	// Todo: Add pagination
+	Find(ctx context.Context, conditions ...ConditionBuilder) ([]T, error)
+
 	// GetItem extracts and returns an item by its (partition, (sort)?) key.
 	GetItem(ctx context.Context, primaryKey DynamoPrimaryKey) (item *T, err error)
 

@@ -14,8 +14,7 @@ type resp[T any] struct {
 	err             error
 }
 
-// Find search and retrieve all items that matches the provided condition(s).
-// Todo: Add pagination
+// Find implements Queries
 func (d *dynamodbWrapper[T]) Find(ctx context.Context, conditions ...ConditionBuilder) ([]T, error) {
 	cb := mergeConditions(conditions)
 

@@ -72,6 +72,13 @@ func TestFind(t *testing.T) {
 			hasError:   true,
 		},
 		{
+			name:       "with empty condition",
+			dbClient:   &dbWithNoError,
+			conditions: []dynamo.Criteria{*dynamo.NewCriteria()},
+			itemsCount: 0,
+			hasError:   true,
+		},
+		{
 			name:     "with 1 condition",
 			dbClient: &dbWithNoError,
 			conditions: []dynamo.Criteria{*dynamo.NewCriteria().

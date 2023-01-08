@@ -21,7 +21,10 @@ func (d *dynamodbWrapper[T]) Find(ctx context.Context, conditions ...Criteria) (
 	// initialize the expression builder
 	builder := NewExpressionBuilder(d.conf.TableInfo.TableName)
 
-	req, _ := builder.BuildScanInput(cb)
+	req, err := builder.BuildScanInput(cb)
+	if err != nil {
+		return nil, err
+	}
 
 	out, err := d.client.ScanWithContext(ctx, req)
 	if err != nil {

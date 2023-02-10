@@ -117,24 +117,41 @@ func newDynamoAttributeValue(value interface{}, KeyType DBKeyType) (*dynamodb.At
 func extractUnprocessedKeys(keys []map[string]*dynamodb.AttributeValue, partitionKey DynamoKeyMetadata, sortKeyMeta *DynamoKeyMetadata) ([]DynamoPrimaryKey, error) {
 	primaryKeys := make([]DynamoPrimaryKey, 0)
 	for _, key := range keys {
-		partKey := getDynamoAttribute(key, partitionKey)
-		var sortKey *DynamoAttribute
-
-		if sortKeyMeta != nil {
-			sortKey = getDynamoAttribute(key, *sortKeyMeta)
+		if len(key) == 0 {
+			continue
 		}
 
-		if partKey == nil || (sortKey == nil && sortKeyMeta != nil) {
-			return nil, fmt.Errorf("error while extracting unprocessed keys")
+		primaryKey, err := extractPrimaryKey(key, partitionKey, sortKeyMeta)
+		if err != nil {
+			return nil, err
 		}
 
-		primaryKeys = append(primaryKeys, DynamoPrimaryKey{
-			PartitionKey: *partKey,
-			SortKey:      sortKey,
-		})
+		primaryKeys = append(primaryKeys, *primaryKey)
 	}
 
 	return primaryKeys, nil
+}
+
+func extractPrimaryKey(keys map[string]*dynamodb.AttributeValue, partitionKey DynamoKeyMetadata, sortKeyMeta *DynamoKeyMetadata) (*DynamoPrimaryKey, error) {
+	if len(keys) == 0 {
+		return nil, nil
+	}
+
+	partKey := getDynamoAttribute(keys, partitionKey)
+	var sortKey *DynamoAttribute
+
+	if sortKeyMeta != nil {
+		sortKey = getDynamoAttribute(keys, *sortKeyMeta)
+	}
+
+	if partKey == nil || (sortKey == nil && sortKeyMeta != nil) {
+		return nil, fmt.Errorf("error while extracting keys")
+	}
+
+	return &DynamoPrimaryKey{
+		PartitionKey: *partKey,
+		SortKey:      sortKey,
+	}, nil
 }
 
 func getDynamoAttribute(attributes map[string]*dynamodb.AttributeValue, meta DynamoKeyMetadata) *DynamoAttribute {

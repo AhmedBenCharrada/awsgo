@@ -15,13 +15,17 @@ type resp[T any] struct {
 }
 
 // Find implements Queries
-func (d *dynamodbWrapper[T]) Find(ctx context.Context, conditions ...Criteria) ([]T, error) {
+func (d *dynamodbWrapper[T]) Find(ctx context.Context, pageReq PageRequest, conditions ...Criteria) (*Page[T], error) {
+	if pageReq.Size == 0 {
+		return &Page[T]{}, nil
+	}
+
 	cb := mergeConditions(conditions)
 
 	// initialize the expression builder
 	builder := NewExpressionBuilder(d.conf.TableInfo.TableName)
 
-	req, err := builder.BuildScanInput(cb)
+	req, err := builder.BuildScanInput(pageReq.LastEvaluatedKey, cb)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +46,16 @@ func (d *dynamodbWrapper[T]) Find(ctx context.Context, conditions ...Criteria) (
 		data = append(data, entity)
 	}
 
-	return data, nil
+	lastEvaluatedKey, err := extractPrimaryKey(
+		out.LastEvaluatedKey,
+		d.conf.TableInfo.PrimaryKey.PartitionKey,
+		d.conf.TableInfo.PrimaryKey.SortKey,
+	)
+
+	return &Page[T]{
+		Items:            data,
+		LastEvaluatedKey: lastEvaluatedKey,
+	}, err
 }
 
 // Get implements Queries
@@ -159,6 +172,7 @@ func (d *dynamodbWrapper[T]) load(ctx context.Context, wg *sync.WaitGroup, ch ch
 		return
 	}
 
+	// Todo: check whether it is better to use d.conf.TableInfo.PrimaryKey
 	partKeyMeta := extractMetadata(&ids[0].PartitionKey)
 	sortKeyMeta := extractMetadata(ids[0].SortKey)
 	res.unprocessedKeys, res.err = extractUnprocessedKeys(out.UnprocessedKeys[d.conf.TableInfo.TableName].Keys, *partKeyMeta, sortKeyMeta)

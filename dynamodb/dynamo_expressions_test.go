@@ -291,7 +291,7 @@ func TestBuildBatchGetItemInput(t *testing.T) {
 func TestBuildScanInput(t *testing.T) {
 	t.Run("without any filter", func(t *testing.T) {
 		input, err := NewExpressionBuilder("table").
-			BuildScanInput(nil)
+			BuildScanInput(nil, nil)
 
 		assert.NoError(t, err)
 		assert.NotEmpty(t, input)
@@ -302,7 +302,7 @@ func TestBuildScanInput(t *testing.T) {
 			Or("attrib2", "val", GT)
 
 		input, err := NewExpressionBuilder("table").
-			BuildScanInput(filter)
+			BuildScanInput(nil, filter)
 
 		assert.NoError(t, err)
 		assert.NotEmpty(t, input)

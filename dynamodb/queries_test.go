@@ -426,6 +426,37 @@ func TestGetByIDs(t *testing.T) {
 			remainingItemsCount: 2,
 		},
 		{
+			name: "with remaining items but empty key (for coverage only)",
+			dbClient: func() dynamo.DBClient {
+				m := mocks.DBClient{}
+				m.On("BatchGetItemWithContext", mock.Anything, mock.Anything).Return(&dynamodb.BatchGetItemOutput{
+					Responses: map[string][]map[string]*dynamodb.AttributeValue{
+						validDbConfig.TableInfo.TableName: {
+							map[string]*dynamodb.AttributeValue{
+								"id":         {S: aws.String("123")},
+								"group_id":   {N: aws.String("1234")},
+								"enabled":    {BOOL: aws.Bool(true)},
+								"first_name": {S: aws.String("name")},
+								"last_name":  {S: aws.String("l_name")},
+							},
+						},
+					},
+					UnprocessedKeys: map[string]*dynamodb.KeysAndAttributes{
+						validDbConfig.TableInfo.TableName: {
+							Keys: []map[string]*dynamodb.AttributeValue{
+								{},
+							},
+						},
+					},
+				}, nil)
+
+				return &m
+			}(),
+			keys:                validKeys,
+			itemsCount:          1,
+			remainingItemsCount: 0,
+		},
+		{
 			name: "with invalid remaining items",
 			dbClient: func() dynamo.DBClient {
 				m := mocks.DBClient{}

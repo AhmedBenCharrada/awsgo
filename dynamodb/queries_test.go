@@ -414,6 +414,7 @@ func TestGetItems(t *testing.T) {
 
 	cases := []struct {
 		name                string
+		dbConfig            dynamo.DBConfig
 		dbClient            dynamo.DBClient
 		keys                []dynamo.DynamoPrimaryKey
 		itemsCount          int
@@ -422,18 +423,70 @@ func TestGetItems(t *testing.T) {
 	}{
 		{
 			name:       "successfully",
+			dbConfig:   validDbConfig,
 			dbClient:   &dbWithNoError,
 			keys:       validKeys,
 			itemsCount: 1,
 		},
 		{
+			name: "nsuccessfully",
+			dbConfig: dynamo.DBConfig{
+				TableInfo: dynamo.TableInfo{
+					TableName: "tableName",
+					PrimaryKey: dynamo.DBPrimaryKeyNames{
+						PartitionKey: dynamo.DynamoKeyMetadata{
+							Name:    "id",
+							KeyType: dynamo.String,
+						},
+					},
+				},
+			},
+			dbClient: func() dynamo.DBClient {
+				m := mocks.DBClient{}
+				m.On("BatchGetItemWithContext", mock.Anything, mock.Anything).Return(&dynamodb.BatchGetItemOutput{
+					Responses: map[string][]map[string]*dynamodb.AttributeValue{
+						validDbConfig.TableInfo.TableName: {
+							map[string]*dynamodb.AttributeValue{
+								"id":      {S: aws.String("123")},
+								"enabled": {BOOL: aws.Bool(true)},
+							},
+						},
+					},
+					UnprocessedKeys: map[string]*dynamodb.KeysAndAttributes{
+						validDbConfig.TableInfo.TableName: {
+							Keys: []map[string]*dynamodb.AttributeValue{
+								{
+									"id": {S: aws.String("124")},
+								},
+							},
+						},
+					},
+				}, nil)
+
+				return &m
+			}(),
+			keys: []dynamo.DynamoPrimaryKey{
+				{
+					PartitionKey: dynamo.DynamoAttribute{
+						KeyName: "id",
+						KeyType: dynamo.String,
+						Value:   "123",
+					},
+				},
+			},
+			itemsCount:          1,
+			remainingItemsCount: 1,
+		},
+		{
 			name:       "with empty ids",
+			dbConfig:   validDbConfig,
 			dbClient:   &dbWithNoError,
 			keys:       make([]dynamo.DynamoPrimaryKey, 0),
 			itemsCount: 0,
 		},
 		{
 			name:                "with db error",
+			dbConfig:            validDbConfig,
 			dbClient:            &dbWithError,
 			keys:                validKeys,
 			remainingItemsCount: 1,
@@ -441,12 +494,14 @@ func TestGetItems(t *testing.T) {
 		},
 		{
 			name:       "with not found item",
+			dbConfig:   validDbConfig,
 			dbClient:   &dbWithNotFoundItem,
 			keys:       validKeys,
 			itemsCount: 0,
 		},
 		{
 			name:     "with invalid key",
+			dbConfig: validDbConfig,
 			dbClient: &dbWithNoError,
 			keys: []dynamo.DynamoPrimaryKey{
 				{
@@ -461,7 +516,8 @@ func TestGetItems(t *testing.T) {
 			hasError:            true,
 		},
 		{
-			name: "with wrong response structure",
+			name:     "with wrong response structure",
+			dbConfig: validDbConfig,
 			dbClient: func() dynamo.DBClient {
 				m := mocks.DBClient{}
 				m.On("BatchGetItemWithContext", mock.Anything, mock.Anything).Return(&dynamodb.BatchGetItemOutput{
@@ -482,7 +538,8 @@ func TestGetItems(t *testing.T) {
 			hasError:            true,
 		},
 		{
-			name: "with remaining items",
+			name:     "with remaining items",
+			dbConfig: validDbConfig,
 			dbClient: func() dynamo.DBClient {
 				m := mocks.DBClient{}
 				m.On("BatchGetItemWithContext", mock.Anything, mock.Anything).Return(&dynamodb.BatchGetItemOutput{
@@ -520,7 +577,8 @@ func TestGetItems(t *testing.T) {
 			remainingItemsCount: 2,
 		},
 		{
-			name: "with remaining items but empty key (for coverage only)",
+			name:     "with remaining items but empty key (for coverage only)",
+			dbConfig: validDbConfig,
 			dbClient: func() dynamo.DBClient {
 				m := mocks.DBClient{}
 				m.On("BatchGetItemWithContext", mock.Anything, mock.Anything).Return(&dynamodb.BatchGetItemOutput{
@@ -551,7 +609,8 @@ func TestGetItems(t *testing.T) {
 			remainingItemsCount: 0,
 		},
 		{
-			name: "with invalid remaining items",
+			name:     "with invalid remaining items",
+			dbConfig: validDbConfig,
 			dbClient: func() dynamo.DBClient {
 				m := mocks.DBClient{}
 				m.On("BatchGetItemWithContext", mock.Anything, mock.Anything).Return(&dynamodb.BatchGetItemOutput{
@@ -585,7 +644,8 @@ func TestGetItems(t *testing.T) {
 			hasError:            true,
 		},
 		{
-			name: "with nil UnprocessedKeys",
+			name:     "with nil UnprocessedKeys",
+			dbConfig: validDbConfig,
 			dbClient: func() dynamo.DBClient {
 				m := mocks.DBClient{}
 				m.On("BatchGetItemWithContext", mock.Anything, mock.Anything).Return(&dynamodb.BatchGetItemOutput{
@@ -610,7 +670,8 @@ func TestGetItems(t *testing.T) {
 			remainingItemsCount: 0,
 		},
 		{
-			name: "with nil UnprocessedKeys for the selected table",
+			name:     "with nil UnprocessedKeys for the selected table",
+			dbConfig: validDbConfig,
 			dbClient: func() dynamo.DBClient {
 				m := mocks.DBClient{}
 				m.On("BatchGetItemWithContext", mock.Anything, mock.Anything).Return(&dynamodb.BatchGetItemOutput{
@@ -637,7 +698,8 @@ func TestGetItems(t *testing.T) {
 			remainingItemsCount: 0,
 		},
 		{
-			name: "with empty UnprocessedKeys for the selected table",
+			name:     "with empty UnprocessedKeys for the selected table",
+			dbConfig: validDbConfig,
 			dbClient: func() dynamo.DBClient {
 				m := mocks.DBClient{}
 				m.On("BatchGetItemWithContext", mock.Anything, mock.Anything).Return(&dynamodb.BatchGetItemOutput{
@@ -670,10 +732,10 @@ func TestGetItems(t *testing.T) {
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			db := dynamo.NewDynamoWrapper[entity](tc.dbClient, validDbConfig)
+			db := dynamo.NewDynamoWrapper[entity](tc.dbClient, tc.dbConfig)
 
 			items, remaining, err := db.GetItems(context.Background(), tc.keys)
-			assert.Equal(t, !tc.hasError, err == nil)
+			assert.Equal(t, !tc.hasError, err == nil, err)
 			assert.Equal(t, tc.itemsCount, len(items))
 			assert.Equal(t, tc.remainingItemsCount, len(remaining))
 		})

@@ -75,6 +75,27 @@ func TestFind(t *testing.T) {
 			itemsCount: 1,
 		},
 		{
+			name:     "with last evaluated key",
+			dbClient: &dbWithNoError,
+			req: dynamo.PageRequest{
+				Size: 3,
+				LastEvaluatedKey: &dynamo.DynamoPrimaryKey{
+					PartitionKey: dynamo.DynamoAttribute{
+						KeyName: "id",
+						KeyType: dynamo.String,
+						Value:   "123",
+					},
+					SortKey: &dynamo.DynamoAttribute{
+						KeyName: "group_id",
+						KeyType: dynamo.Number,
+						Value:   1234,
+					},
+				},
+			},
+			conditions: nil,
+			itemsCount: 1,
+		},
+		{
 			name:     "page size == 0",
 			dbClient: &dbWithNoError,
 			req: dynamo.PageRequest{

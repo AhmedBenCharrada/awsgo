@@ -1,13 +1,9 @@
 package dynamodb
 
-import (
-	"github.com/aws/aws-sdk-go/service/dynamodb"
-)
-
 /*
  The below section is internal for validating the interface implementation
 */
-
+/*
 var _ Commands[_entity] = (*dynamodbWrapper[_entity])(nil)
 var _ Queries[_entity] = (*dynamodbWrapper[_entity])(nil)
 
@@ -20,3 +16,4 @@ func (_entity) Marshal() (map[string]*dynamodb.AttributeValue, error) {
 func (_entity) UnMarshal(map[string]*dynamodb.AttributeValue) (_entity, error) {
 	panic("unimplemented")
 }
+*/

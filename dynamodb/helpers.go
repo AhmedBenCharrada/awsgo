@@ -99,11 +99,11 @@ func newDynamoAttributeValue(value interface{}, KeyType DBKeyType) (*dynamodb.At
 	switch KeyType {
 	case String:
 		return &dynamodb.AttributeValue{
-			S: aws.String(value.(string)),
+			S: aws.String(fmt.Sprintf("%v", value)),
 		}, nil
 	case Number:
 		return &dynamodb.AttributeValue{
-			N: aws.String(value.(string)),
+			N: aws.String(fmt.Sprintf("%v", value)),
 		}, nil
 	case Boolean:
 		return &dynamodb.AttributeValue{

@@ -58,7 +58,7 @@ type Page[T EntityMarshaler[T]] struct {
 type Queries[T EntityMarshaler[T]] interface {
 	// Find retrieves all items that match the provided condition(s).
 	// Todo: Add pagination
-	Find(ctx context.Context, req PageRequest, conditions ...Criteria) (*Page[T], error)
+	Find(ctx context.Context, req PageRequest, conditions ...Criteria) (Page[T], error)
 
 	// GetItem extracts and returns an item by its (partition, (sort)?) key.
 	GetItem(ctx context.Context, primaryKey DynamoPrimaryKey) (item *T, err error)

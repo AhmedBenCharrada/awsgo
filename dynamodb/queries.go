@@ -15,9 +15,9 @@ type resp[T any] struct {
 }
 
 // Find implements Queries
-func (d *dynamodbWrapper[T]) Find(ctx context.Context, pageReq PageRequest, conditions ...Criteria) (*Page[T], error) {
+func (d *dynamodbWrapper[T]) Find(ctx context.Context, pageReq PageRequest, conditions ...Criteria) (Page[T], error) {
 	if pageReq.Size == 0 {
-		return &Page[T]{}, nil
+		return Page[T]{}, nil
 	}
 
 	cb := mergeConditions(conditions)
@@ -27,12 +27,12 @@ func (d *dynamodbWrapper[T]) Find(ctx context.Context, pageReq PageRequest, cond
 
 	req, err := builder.BuildScanInput(pageReq.LastEvaluatedKey, cb)
 	if err != nil {
-		return nil, err
+		return Page[T]{}, err
 	}
 
 	out, err := d.client.ScanWithContext(ctx, req)
 	if err != nil {
-		return nil, err
+		return Page[T]{}, err
 	}
 
 	// parse response and accumulate returned items
@@ -40,7 +40,7 @@ func (d *dynamodbWrapper[T]) Find(ctx context.Context, pageReq PageRequest, cond
 	for _, item := range out.Items {
 		entity, err := (*new(T)).UnMarshal(item)
 		if err != nil {
-			return nil, err
+			return Page[T]{}, err
 		}
 
 		data = append(data, entity)
@@ -52,7 +52,7 @@ func (d *dynamodbWrapper[T]) Find(ctx context.Context, pageReq PageRequest, cond
 		d.conf.TableInfo.PrimaryKey.SortKey,
 	)
 
-	return &Page[T]{
+	return Page[T]{
 		Items:            data,
 		LastEvaluatedKey: lastEvaluatedKey,
 	}, err

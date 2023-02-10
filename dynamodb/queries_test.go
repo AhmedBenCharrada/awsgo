@@ -41,6 +41,10 @@ func TestFind(t *testing.T) {
 				"last_name":  {S: aws.String("l_name")},
 			},
 		},
+		LastEvaluatedKey: map[string]*dynamodb.AttributeValue{
+			"id":       {S: aws.String("123")},
+			"group_id": {N: aws.String("1234")},
+		},
 	}, nil)
 
 	dbWithError := mocks.DBClient{}
@@ -51,9 +55,14 @@ func TestFind(t *testing.T) {
 		Items: []map[string]*dynamodb.AttributeValue{},
 	}, nil)
 
+	validReq := dynamo.PageRequest{
+		Size: 3,
+	}
+
 	cases := []struct {
 		name       string
 		dbClient   dynamo.DBClient
+		req        dynamo.PageRequest
 		conditions []dynamo.Criteria
 		itemsCount int
 		hasError   bool
@@ -61,12 +70,23 @@ func TestFind(t *testing.T) {
 		{
 			name:       "successfully",
 			dbClient:   &dbWithNoError,
+			req:        validReq,
 			conditions: nil,
 			itemsCount: 1,
 		},
-		/*{
+		{
+			name:     "page size == 0",
+			dbClient: &dbWithNoError,
+			req: dynamo.PageRequest{
+				Size: 0,
+			},
+			conditions: nil,
+			itemsCount: 0,
+		},
+		{
 			name:       "with error",
 			dbClient:   &dbWithError,
+			req:        validReq,
 			conditions: nil,
 			itemsCount: 0,
 			hasError:   true,
@@ -74,6 +94,7 @@ func TestFind(t *testing.T) {
 		{
 			name:       "with empty condition",
 			dbClient:   &dbWithNoError,
+			req:        validReq,
 			conditions: []dynamo.Criteria{*dynamo.NewCriteria()},
 			itemsCount: 0,
 			hasError:   true,
@@ -81,6 +102,7 @@ func TestFind(t *testing.T) {
 		{
 			name:     "with 1 condition",
 			dbClient: &dbWithNoError,
+			req:      validReq,
 			conditions: []dynamo.Criteria{*dynamo.NewCriteria().
 				And("first_name", "name", dynamo.EQUAL),
 			},
@@ -89,6 +111,7 @@ func TestFind(t *testing.T) {
 		{
 			name:     "with 2 condition",
 			dbClient: &dbWithNoError,
+			req:      validReq,
 			conditions: []dynamo.Criteria{*dynamo.NewCriteria().
 				And("first_name", "name", dynamo.EQUAL),
 				*dynamo.NewCriteria().
@@ -110,10 +133,60 @@ func TestFind(t *testing.T) {
 
 				return db
 			}(),
+			req:        validReq,
 			conditions: nil,
 			itemsCount: 0,
 			hasError:   true,
-		},*/
+		},
+		{
+			name: "with empty lastEvaluatedKey",
+			dbClient: func() dynamo.DBClient {
+				db := &mocks.DBClient{}
+				db.On("ScanWithContext", mock.Anything, mock.Anything).Return(&dynamodb.ScanOutput{
+					Items: []map[string]*dynamodb.AttributeValue{
+						{
+							"id":         {S: aws.String("123")},
+							"group_id":   {N: aws.String("1234")},
+							"enabled":    {BOOL: aws.Bool(true)},
+							"first_name": {S: aws.String("name")},
+							"last_name":  {S: aws.String("l_name")},
+						},
+					},
+				}, nil)
+
+				return db
+			}(),
+			req:        validReq,
+			conditions: nil,
+			itemsCount: 1,
+		},
+		{
+			name: "with wrong lastEvaluatedKey (for coverage)",
+			dbClient: func() dynamo.DBClient {
+				db := &mocks.DBClient{}
+				db.On("ScanWithContext", mock.Anything, mock.Anything).Return(&dynamodb.ScanOutput{
+					Items: []map[string]*dynamodb.AttributeValue{
+						{
+							"id":         {S: aws.String("123")},
+							"group_id":   {N: aws.String("1234")},
+							"enabled":    {BOOL: aws.Bool(true)},
+							"first_name": {S: aws.String("name")},
+							"last_name":  {S: aws.String("l_name")},
+						},
+					},
+					LastEvaluatedKey: map[string]*dynamodb.AttributeValue{
+						"part": {S: aws.String("123")},
+						"sort": {N: aws.String("1234")},
+					},
+				}, nil)
+
+				return db
+			}(),
+			req:        validReq,
+			conditions: nil,
+			itemsCount: 1,
+			hasError:   true,
+		},
 	}
 
 	for _, tc := range cases {
@@ -121,7 +194,7 @@ func TestFind(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			db := dynamo.NewDynamoWrapper[entity](tc.dbClient, dbConfig)
 
-			res, err := db.Find(context.Background(), dynamo.PageRequest{Size: 5}, tc.conditions...)
+			res, err := db.Find(context.Background(), tc.req, tc.conditions...)
 			assert.Equal(t, !tc.hasError, err == nil, err)
 			assert.Equal(t, tc.itemsCount, len(res.Items))
 		})

@@ -355,7 +355,7 @@ func TestGet(t *testing.T) {
 	}
 }
 
-func TestGetByIDs(t *testing.T) {
+func TestGetItems(t *testing.T) {
 	validDbConfig := dynamo.DBConfig{
 		TableInfo: dynamo.TableInfo{
 			TableName: "tableName",

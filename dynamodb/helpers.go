@@ -106,8 +106,12 @@ func newDynamoAttributeValue(value interface{}, KeyType DBKeyType) (*dynamodb.At
 			N: aws.String(fmt.Sprintf("%v", value)),
 		}, nil
 	case Boolean:
+		b, ok := value.(bool)
+		if !ok {
+			return nil, fmt.Errorf("%v cannot be casted to bool", value)
+		}
 		return &dynamodb.AttributeValue{
-			BOOL: aws.Bool(value.(bool)),
+			BOOL: aws.Bool(b),
 		}, nil
 	}
 

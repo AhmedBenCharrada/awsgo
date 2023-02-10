@@ -307,4 +307,44 @@ func TestBuildScanInput(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotEmpty(t, input)
 	})
+
+	t.Run("with last evaluated key", func(t *testing.T) {
+		filter := NewCriteria().And("attrib1", "some-value", EQUAL).
+			Or("attrib2", "val", GT)
+
+		input, err := NewExpressionBuilder("table").
+			BuildScanInput(&DynamoPrimaryKey{
+				PartitionKey: DynamoAttribute{
+					KeyName: "id",
+					KeyType: String,
+					Value:   "123",
+				},
+				SortKey: &DynamoAttribute{
+					KeyName: "group_id",
+					KeyType: Number,
+					Value:   1234,
+				},
+			}, filter)
+
+		assert.NoError(t, err)
+		assert.NotEmpty(t, input)
+	})
+
+	t.Run("with wrong last evaluated key", func(t *testing.T) {
+		filter := NewCriteria().And("attrib1", "some-value", EQUAL).
+			Or("attrib2", "val", GT)
+
+		input, err := NewExpressionBuilder("table").
+			BuildScanInput(&DynamoPrimaryKey{
+				PartitionKey: DynamoAttribute{
+					KeyName: "enabled",
+					KeyType: Boolean,
+					Value:   "abc",
+				},
+			}, filter)
+
+		assert.Error(t, err)
+		assert.Empty(t, input)
+	})
+
 }

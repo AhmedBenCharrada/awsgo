@@ -30,6 +30,7 @@ func (d *dynamodbWrapper[T]) Find(ctx context.Context, pageReq PageRequest, cond
 		return Page[T]{}, err
 	}
 
+	// Todo: consider using QueryPageWithContext
 	out, err := d.client.ScanWithContext(ctx, req)
 	if err != nil {
 		return Page[T]{}, err

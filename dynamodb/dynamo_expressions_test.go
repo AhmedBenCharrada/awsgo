@@ -291,7 +291,7 @@ func TestBuildBatchGetItemInput(t *testing.T) {
 func TestBuildScanInput(t *testing.T) {
 	t.Run("without any filter", func(t *testing.T) {
 		input, err := NewExpressionBuilder("table").
-			BuildScanInput(nil, nil)
+			BuildScanInput(nil, nil, 0)
 
 		assert.NoError(t, err)
 		assert.NotEmpty(t, input)
@@ -302,7 +302,7 @@ func TestBuildScanInput(t *testing.T) {
 			Or("attrib2", "val", GT)
 
 		input, err := NewExpressionBuilder("table").
-			BuildScanInput(nil, filter)
+			BuildScanInput(filter, nil, 5)
 
 		assert.NoError(t, err)
 		assert.NotEmpty(t, input)
@@ -313,7 +313,7 @@ func TestBuildScanInput(t *testing.T) {
 			Or("attrib2", "val", GT)
 
 		input, err := NewExpressionBuilder("table").
-			BuildScanInput(&DynamoPrimaryKey{
+			BuildScanInput(filter, &DynamoPrimaryKey{
 				PartitionKey: DynamoAttribute{
 					KeyName: "id",
 					KeyType: String,
@@ -324,7 +324,7 @@ func TestBuildScanInput(t *testing.T) {
 					KeyType: Number,
 					Value:   1234,
 				},
-			}, filter)
+			}, 0)
 
 		assert.NoError(t, err)
 		assert.NotEmpty(t, input)
@@ -335,13 +335,13 @@ func TestBuildScanInput(t *testing.T) {
 			Or("attrib2", "val", GT)
 
 		input, err := NewExpressionBuilder("table").
-			BuildScanInput(&DynamoPrimaryKey{
+			BuildScanInput(filter, &DynamoPrimaryKey{
 				PartitionKey: DynamoAttribute{
 					KeyName: "enabled",
 					KeyType: Boolean,
 					Value:   "abc",
 				},
-			}, filter)
+			}, 0)
 
 		assert.Error(t, err)
 		assert.Empty(t, input)

@@ -146,7 +146,7 @@ func (b *dynamoExpressionBuilder) BuildBatchGetItemInput(keys ...DynamoPrimaryKe
 }
 
 // BuildScanInput builds the dynamo scan input.
-func (b *dynamoExpressionBuilder) BuildScanInput(lastEvaluatedKey *DynamoPrimaryKey, filter *Criteria) (*dynamodb.ScanInput, error) {
+func (b *dynamoExpressionBuilder) BuildScanInput(filter *Criteria, lastEvaluatedKey *DynamoPrimaryKey, limit int64) (*dynamodb.ScanInput, error) {
 	var startKey map[string]*dynamodb.AttributeValue
 	if lastEvaluatedKey != nil {
 		// prepare the partition and the sort keys
@@ -158,9 +158,15 @@ func (b *dynamoExpressionBuilder) BuildScanInput(lastEvaluatedKey *DynamoPrimary
 		startKey = prepareDynamoKeys(partKey, sortKey)
 	}
 
+	var size *int64
+	if limit > 0 {
+		size = aws.Int64(limit)
+	}
+
 	if filter == nil {
 		return &dynamodb.ScanInput{
 			TableName:         aws.String(b.tableName),
+			Limit:             size,
 			ExclusiveStartKey: startKey,
 		}, nil
 	}
@@ -176,6 +182,7 @@ func (b *dynamoExpressionBuilder) BuildScanInput(lastEvaluatedKey *DynamoPrimary
 		FilterExpression:          expr.Filter(),
 		ProjectionExpression:      expr.Projection(),
 		TableName:                 aws.String(b.tableName),
+		Limit:                     size,
 		ExclusiveStartKey:         startKey,
 	}, err
 }

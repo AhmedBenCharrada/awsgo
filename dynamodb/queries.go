@@ -25,7 +25,7 @@ func (d *dynamodbWrapper[T]) Find(ctx context.Context, pageReq PageRequest, cond
 	// initialize the expression builder
 	builder := NewExpressionBuilder(d.conf.TableInfo.TableName)
 
-	req, err := builder.BuildScanInput(pageReq.LastEvaluatedKey, cb)
+	req, err := builder.BuildScanInput(cb, pageReq.LastEvaluatedKey, int64(pageReq.Size))
 	if err != nil {
 		return Page[T]{}, err
 	}

@@ -291,7 +291,7 @@ func TestBuildBatchGetItemInput(t *testing.T) {
 func TestBuildScanInput(t *testing.T) {
 	t.Run("without any filter", func(t *testing.T) {
 		input, err := NewExpressionBuilder("table").
-			BuildScanInput(nil, nil, 0)
+			BuildScanInput(nil, nil, nil, 0)
 
 		assert.NoError(t, err)
 		assert.NotEmpty(t, input)
@@ -302,7 +302,7 @@ func TestBuildScanInput(t *testing.T) {
 			Or("attrib2", "val", GT)
 
 		input, err := NewExpressionBuilder("table").
-			BuildScanInput(filter, nil, 5)
+			BuildScanInput(nil, filter, nil, 5)
 
 		assert.NoError(t, err)
 		assert.NotEmpty(t, input)
@@ -313,7 +313,7 @@ func TestBuildScanInput(t *testing.T) {
 			Or("attrib2", "val", GT)
 
 		input, err := NewExpressionBuilder("table").
-			BuildScanInput(filter, &DynamoPrimaryKey{
+			BuildScanInput(nil, filter, &DynamoPrimaryKey{
 				PartitionKey: DynamoAttribute{
 					KeyName: "id",
 					KeyType: String,
@@ -335,7 +335,7 @@ func TestBuildScanInput(t *testing.T) {
 			Or("attrib2", "val", GT)
 
 		input, err := NewExpressionBuilder("table").
-			BuildScanInput(filter, &DynamoPrimaryKey{
+			BuildScanInput(nil, filter, &DynamoPrimaryKey{
 				PartitionKey: DynamoAttribute{
 					KeyName: "enabled",
 					KeyType: Boolean,

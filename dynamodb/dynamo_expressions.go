@@ -146,16 +146,10 @@ func (b *dynamoExpressionBuilder) BuildBatchGetItemInput(keys ...DynamoPrimaryKe
 }
 
 // BuildScanInput builds the dynamo scan input.
-func (b *dynamoExpressionBuilder) BuildScanInput(filter *Criteria, lastEvaluatedKey *DynamoPrimaryKey, limit int64) (*dynamodb.ScanInput, error) {
-	var startKey map[string]*dynamodb.AttributeValue
-	if lastEvaluatedKey != nil {
-		// prepare the partition and the sort keys
-		partKey, sortKey, err := preparePartSortKey(*lastEvaluatedKey)
-		if err != nil {
-			return nil, err
-		}
-
-		startKey = prepareDynamoKeys(partKey, sortKey)
+func (b *dynamoExpressionBuilder) BuildScanInput(index *string, filter *Criteria, lastEvaluatedKey *DynamoPrimaryKey, limit int64) (*dynamodb.ScanInput, error) {
+	startKey, err := getLastEvaluatedKey(lastEvaluatedKey)
+	if err != nil {
+		return nil, err
 	}
 
 	var size *int64
@@ -177,12 +171,13 @@ func (b *dynamoExpressionBuilder) BuildScanInput(filter *Criteria, lastEvaluated
 	expr, err := builder.Build()
 
 	return &dynamodb.ScanInput{
+		TableName:                 aws.String(b.tableName),
+		IndexName:                 index,
+		Limit:                     size,
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
 		FilterExpression:          expr.Filter(),
 		ProjectionExpression:      expr.Projection(),
-		TableName:                 aws.String(b.tableName),
-		Limit:                     size,
 		ExclusiveStartKey:         startKey,
 	}, err
 }
@@ -197,6 +192,22 @@ func (b *dynamoExpressionBuilder) validateKeys() error {
 	}
 
 	return nil
+}
+
+func getLastEvaluatedKey(lastEvaluatedKey *DynamoPrimaryKey) (map[string]*dynamodb.AttributeValue, error) {
+	var startKey map[string]*dynamodb.AttributeValue
+	if lastEvaluatedKey == nil {
+		return startKey, nil
+	}
+
+	// prepare the partition and the sort keys
+	partKey, sortKey, err := preparePartSortKey(*lastEvaluatedKey)
+	if err != nil {
+		return nil, err
+	}
+
+	startKey = prepareDynamoKeys(partKey, sortKey)
+	return startKey, nil
 }
 
 func prepareDynamoKeys(partKey DynamoAttr, sortKey *DynamoAttr) map[string]*dynamodb.AttributeValue {

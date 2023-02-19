@@ -55,15 +55,14 @@ func TestFind(t *testing.T) {
 		Items: []map[string]*dynamodb.AttributeValue{},
 	}, nil)
 
-	validReq := dynamo.PageRequest{
+	validReq := dynamo.Request{
 		Size: 3,
 	}
 
 	cases := []struct {
 		name       string
 		dbClient   dynamo.DBClient
-		req        dynamo.PageRequest
-		conditions []dynamo.Criteria
+		req        dynamo.Request
 		itemsCount int
 		hasError   bool
 	}{
@@ -71,13 +70,12 @@ func TestFind(t *testing.T) {
 			name:       "successfully",
 			dbClient:   &dbWithNoError,
 			req:        validReq,
-			conditions: nil,
 			itemsCount: 1,
 		},
 		{
 			name:     "with last evaluated key",
 			dbClient: &dbWithNoError,
-			req: dynamo.PageRequest{
+			req: dynamo.Request{
 				Size: 3,
 				LastEvaluatedKey: &dynamo.DynamoPrimaryKey{
 					PartitionKey: dynamo.DynamoAttribute{
@@ -92,51 +90,57 @@ func TestFind(t *testing.T) {
 					},
 				},
 			},
-			conditions: nil,
 			itemsCount: 1,
 		},
 		{
 			name:     "page size == 0",
 			dbClient: &dbWithNoError,
-			req: dynamo.PageRequest{
+			req: dynamo.Request{
 				Size: 0,
 			},
-			conditions: nil,
 			itemsCount: 0,
 		},
 		{
 			name:       "with error",
 			dbClient:   &dbWithError,
 			req:        validReq,
-			conditions: nil,
 			itemsCount: 0,
 			hasError:   true,
 		},
 		{
-			name:       "with empty condition",
-			dbClient:   &dbWithNoError,
-			req:        validReq,
-			conditions: []dynamo.Criteria{*dynamo.NewCriteria()},
+			name:     "with empty condition",
+			dbClient: &dbWithNoError,
+			req: dynamo.Request{
+				Size:             validReq.Size,
+				LastEvaluatedKey: validReq.LastEvaluatedKey,
+				Conditions:       []dynamo.Criteria{*dynamo.NewCriteria()},
+			},
 			itemsCount: 0,
 			hasError:   true,
 		},
 		{
 			name:     "with 1 condition",
 			dbClient: &dbWithNoError,
-			req:      validReq,
-			conditions: []dynamo.Criteria{*dynamo.NewCriteria().
-				And("first_name", "name", dynamo.EQUAL),
+			req: dynamo.Request{
+				Size:             validReq.Size,
+				LastEvaluatedKey: validReq.LastEvaluatedKey,
+				Conditions: []dynamo.Criteria{*dynamo.NewCriteria().
+					And("first_name", "name", dynamo.EQUAL),
+				},
 			},
 			itemsCount: 1,
 		},
 		{
 			name:     "with 2 condition",
 			dbClient: &dbWithNoError,
-			req:      validReq,
-			conditions: []dynamo.Criteria{*dynamo.NewCriteria().
-				And("first_name", "name", dynamo.EQUAL),
-				*dynamo.NewCriteria().
-					And("last_name", "l_name", dynamo.GT)},
+			req: dynamo.Request{
+				Size:             validReq.Size,
+				LastEvaluatedKey: validReq.LastEvaluatedKey,
+				Conditions: []dynamo.Criteria{*dynamo.NewCriteria().
+					And("first_name", "name", dynamo.EQUAL),
+					*dynamo.NewCriteria().
+						And("last_name", "l_name", dynamo.GT)},
+			},
 			itemsCount: 1,
 		},
 		{
@@ -155,7 +159,6 @@ func TestFind(t *testing.T) {
 				return db
 			}(),
 			req:        validReq,
-			conditions: nil,
 			itemsCount: 0,
 			hasError:   true,
 		},
@@ -178,7 +181,6 @@ func TestFind(t *testing.T) {
 				return db
 			}(),
 			req:        validReq,
-			conditions: nil,
 			itemsCount: 1,
 		},
 		{
@@ -204,7 +206,6 @@ func TestFind(t *testing.T) {
 				return db
 			}(),
 			req:        validReq,
-			conditions: nil,
 			itemsCount: 1,
 			hasError:   true,
 		},
@@ -215,7 +216,7 @@ func TestFind(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			db := dynamo.NewDynamoWrapper[entity](tc.dbClient, dbConfig)
 
-			res, err := db.Find(context.Background(), tc.req, tc.conditions...)
+			res, err := db.Find(context.Background(), tc.req)
 			assert.Equal(t, !tc.hasError, err == nil, err)
 			assert.Equal(t, tc.itemsCount, len(res.Items))
 		})

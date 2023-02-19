@@ -15,22 +15,22 @@ type resp[T any] struct {
 }
 
 // Find implements Queries
-func (d *dynamodbWrapper[T]) Find(ctx context.Context, pageReq PageRequest, conditions ...Criteria) (Page[T], error) {
-	if pageReq.Size == 0 {
+func (d *dynamodbWrapper[T]) Find(ctx context.Context, req Request) (Page[T], error) {
+	if req.Size == 0 {
 		return Page[T]{}, nil
 	}
 
-	cb := mergeConditions(conditions)
+	cb := mergeConditions(req.Conditions)
 
 	// initialize the expression builder
 	builder := NewExpressionBuilder(d.conf.TableInfo.TableName)
 
-	req, err := builder.BuildScanInput(cb, pageReq.LastEvaluatedKey, int64(pageReq.Size))
+	in, err := builder.BuildScanInput(cb, req.LastEvaluatedKey, int64(req.Size))
 	if err != nil {
 		return Page[T]{}, err
 	}
 
-	out, err := d.client.ScanWithContext(ctx, req)
+	out, err := d.client.ScanWithContext(ctx, in)
 	if err != nil {
 		return Page[T]{}, err
 	}

@@ -39,13 +39,12 @@ type EntityMarshaler[T any] interface {
 	UnMarshal(map[string]*dynamodb.AttributeValue) (T, error)
 }
 
-// PageRequest pagination request.
-//
-// size: the max item per page
-// LastEvaluatedKey: the last retrieved key.
-type PageRequest struct {
+// Request get items with pagination request.
+type Request struct {
 	Size             int
+	Index            *string
 	LastEvaluatedKey *DynamoPrimaryKey
+	Conditions       []Criteria
 }
 
 // Page a page of retrieved items.
@@ -57,7 +56,7 @@ type Page[T EntityMarshaler[T]] struct {
 // Queries ...
 type Queries[T EntityMarshaler[T]] interface {
 	// Find retrieves all items that match the provided condition(s).
-	Find(ctx context.Context, req PageRequest, conditions ...Criteria) (Page[T], error)
+	Find(ctx context.Context, req Request) (Page[T], error)
 
 	// GetItem extracts and returns an item by its (partition, (sort)?) key.
 	GetItem(ctx context.Context, primaryKey DynamoPrimaryKey) (item *T, err error)

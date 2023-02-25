@@ -182,6 +182,42 @@ func (b *dynamoExpressionBuilder) BuildScanInput(index *string, filter *Criteria
 	}, err
 }
 
+// BuildQueryInput builds dynamo query input.
+func (b *dynamoExpressionBuilder) BuildQueryInput(index *string, partitionKey DynamoAttribute, filter *Criteria, lastEvaluatedKey *DynamoPrimaryKey, limit int64) (*dynamodb.QueryInput, error) {
+	startKey, err := getLastEvaluatedKey(lastEvaluatedKey)
+	if err != nil {
+		return nil, err
+	}
+
+	var size *int64
+	if limit > 0 {
+		size = aws.Int64(limit)
+	}
+
+	builder := expression.NewBuilder()
+	builder = builder.
+		WithKeyCondition(
+			expression.Key(string(partitionKey.KeyName)).Equal(expression.Value(partitionKey.Value)),
+		)
+
+	if filter != nil {
+		builder.WithFilter(filter.GetExpression())
+	}
+
+	expr, err := builder.Build()
+	return &dynamodb.QueryInput{
+		TableName:                 aws.String(b.tableName),
+		IndexName:                 index,
+		Limit:                     size,
+		KeyConditionExpression:    expr.KeyCondition(),
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		FilterExpression:          expr.Filter(),
+		ProjectionExpression:      expr.Projection(),
+		ExclusiveStartKey:         startKey,
+	}, err
+}
+
 func (b *dynamoExpressionBuilder) validateKeys() error {
 	if b.partKey.IsEmpty() {
 		return ErrInvalidPartitionKey

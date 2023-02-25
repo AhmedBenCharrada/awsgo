@@ -348,3 +348,76 @@ func TestBuildScanInput(t *testing.T) {
 	})
 
 }
+
+func TestBuildQueryInput(t *testing.T) {
+	t.Run("without any filter", func(t *testing.T) {
+		input, err := NewExpressionBuilder("table").
+			BuildQueryInput(nil, DynamoAttribute{
+				KeyName: "group-id",
+				Value:   "1",
+			}, nil, nil, 15)
+
+		assert.NoError(t, err)
+		assert.NotEmpty(t, input)
+	})
+
+	t.Run("with filter", func(t *testing.T) {
+		filter := NewCriteria().And("attrib1", "some-value", EQUAL).
+			Or("attrib2", "val", GT)
+
+		input, err := NewExpressionBuilder("table").
+			BuildQueryInput(nil, DynamoAttribute{
+				KeyName: "group-id",
+				Value:   "1",
+			}, filter, nil, 0)
+
+		assert.NoError(t, err)
+		assert.NotEmpty(t, input)
+	})
+
+	t.Run("with last evaluated key", func(t *testing.T) {
+		filter := NewCriteria().And("attrib1", "some-value", EQUAL).
+			Or("attrib2", "val", GT)
+
+		input, err := NewExpressionBuilder("table").
+			BuildQueryInput(nil, DynamoAttribute{
+				KeyName: "group-id",
+				Value:   "1",
+			}, filter, &DynamoPrimaryKey{
+				PartitionKey: DynamoAttribute{
+					KeyName: "group-id",
+					Value:   "1",
+				},
+				SortKey: &DynamoAttribute{
+					KeyName: "id",
+					Value:   "321",
+				},
+			}, 0)
+
+		assert.NoError(t, err)
+		assert.NotEmpty(t, input)
+	})
+
+	t.Run("with wrong last evaluated key", func(t *testing.T) {
+		filter := NewCriteria().And("attrib1", "some-value", EQUAL).
+			Or("attrib2", "val", GT)
+
+		input, err := NewExpressionBuilder("table").
+			BuildQueryInput(nil, DynamoAttribute{
+				KeyName: "group-id",
+				Value:   "1",
+			},
+				filter,
+				&DynamoPrimaryKey{
+					PartitionKey: DynamoAttribute{
+						KeyName: "enabled",
+						KeyType: Boolean,
+						Value:   "abc",
+					},
+				}, 0)
+
+		assert.Error(t, err)
+		assert.Empty(t, input)
+	})
+
+}

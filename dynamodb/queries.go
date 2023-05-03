@@ -14,23 +14,18 @@ type resp[T any] struct {
 	err             error
 }
 
+type findOutput struct {
+	Items            []map[string]*dynamodb.AttributeValue
+	LastEvaluatedKey map[string]*dynamodb.AttributeValue
+}
+
 // Find implements Queries
 func (d *dynamodbWrapper[T]) Find(ctx context.Context, req Request) (Page[T], error) {
 	if req.Size == 0 {
 		return Page[T]{}, nil
 	}
 
-	cb := mergeConditions(req.Conditions)
-
-	// initialize the expression builder
-	builder := NewExpressionBuilder(d.conf.TableInfo.TableName)
-
-	in, err := builder.BuildScanInput(nil, cb, req.LastEvaluatedKey, int64(req.Size))
-	if err != nil {
-		return Page[T]{}, err
-	}
-
-	out, err := d.client.ScanWithContext(ctx, in)
+	out, err := find(ctx, d.client, d.conf.TableInfo.TableName, req)
 	if err != nil {
 		return Page[T]{}, err
 	}
@@ -55,6 +50,45 @@ func (d *dynamodbWrapper[T]) Find(ctx context.Context, req Request) (Page[T], er
 	return Page[T]{
 		Items:            data,
 		LastEvaluatedKey: lastEvaluatedKey,
+	}, err
+}
+
+func find(ctx context.Context, client DBClient, table string, req Request) (*findOutput, error) {
+	cb := mergeConditions(req.Conditions)
+
+	// initialize the expression builder
+	builder := NewExpressionBuilder(table)
+
+	if req.PartitionKey == nil {
+		in, err := builder.BuildScanInput(req.Index, cb, req.LastEvaluatedKey, int64(req.Size))
+		if err != nil {
+			return nil, err
+		}
+
+		out, err := client.ScanWithContext(ctx, in)
+		if err != nil {
+			return nil, err
+		}
+
+		return &findOutput{
+			Items:            out.Items,
+			LastEvaluatedKey: out.LastEvaluatedKey,
+		}, err
+	}
+
+	in, err := builder.BuildQueryInput(req.Index, *req.PartitionKey, cb, req.LastEvaluatedKey, int64(req.Size))
+	if err != nil {
+		return nil, err
+	}
+
+	out, err := client.QueryWithContext(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+
+	return &findOutput{
+		Items:            out.Items,
+		LastEvaluatedKey: out.LastEvaluatedKey,
 	}, err
 }
 

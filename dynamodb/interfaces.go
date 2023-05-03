@@ -43,6 +43,7 @@ type EntityMarshaler[T any] interface {
 type Request struct {
 	Size             int
 	Index            *string
+	PartitionKey     *DynamoAttribute
 	LastEvaluatedKey *DynamoPrimaryKey
 	Conditions       []Criteria
 }

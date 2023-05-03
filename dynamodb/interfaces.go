@@ -33,8 +33,8 @@ type DynamoPrimaryKey struct {
 	SortKey      *DynamoAttribute
 }
 
-// EntityMarshaler describes the methods an entity should implement.
-type EntityMarshaler[T any] interface {
+// Entity describes the methods an entity should implement.
+type Entity[T any] interface {
 	Marshal() (map[string]*dynamodb.AttributeValue, error)
 	UnMarshal(map[string]*dynamodb.AttributeValue) (T, error)
 }
@@ -49,13 +49,13 @@ type Request struct {
 }
 
 // Page a page of retrieved items.
-type Page[T EntityMarshaler[T]] struct {
+type Page[T Entity[T]] struct {
 	Items            []T
 	LastEvaluatedKey *DynamoPrimaryKey
 }
 
 // Queries ...
-type Queries[T EntityMarshaler[T]] interface {
+type Queries[T Entity[T]] interface {
 	// Find retrieves all items that match the provided condition(s).
 	Find(ctx context.Context, req Request) (Page[T], error)
 
@@ -67,7 +67,7 @@ type Queries[T EntityMarshaler[T]] interface {
 }
 
 // Commands ..
-type Commands[T EntityMarshaler[T]] interface {
+type Commands[T Entity[T]] interface {
 	// Create inserts a new item to dynamo table and returns the item's (partition, (sort)?) key.
 	Create(context.Context, T) (DynamoPrimaryKey, error)
 	// Update updates a dynamo existing item.

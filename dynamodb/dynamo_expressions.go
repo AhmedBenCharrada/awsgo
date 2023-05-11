@@ -1,8 +1,6 @@
 package dynamodb
 
 import (
-	"fmt"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
@@ -14,11 +12,6 @@ type DynamoAttr struct {
 	KeyType DBKeyType
 	Value   *dynamodb.AttributeValue
 }
-
-var (
-	ErrInvalidPartitionKey = fmt.Errorf("invalid partition key")
-	ErrInvalidSortKey      = fmt.Errorf("invalid sort key")
-)
 
 // IsEmpty checks whether a dynamo-value is nit or empty.
 func (d *DynamoAttr) IsEmpty() bool {

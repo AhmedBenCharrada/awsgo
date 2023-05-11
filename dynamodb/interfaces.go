@@ -11,6 +11,7 @@ import (
 // For more information, see https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.NamingRulesDataTypes.html
 type DBKeyType int
 
+// The allowed dynamodb types.
 const (
 	String DBKeyType = iota
 	Number

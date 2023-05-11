@@ -2,6 +2,7 @@ package dynamodb
 
 import "github.com/aws/aws-sdk-go/service/dynamodb/expression"
 
+// Operator ..
 type Operator int
 
 const (
@@ -17,11 +18,13 @@ const (
 	GE
 )
 
+// Criteria ..
 type Criteria struct {
 	isEmpty bool
 	builder expression.ConditionBuilder
 }
 
+// NewCriteria ..
 func NewCriteria() *Criteria {
 	return &Criteria{
 		isEmpty: true,

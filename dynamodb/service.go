@@ -4,6 +4,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
 )
 
+// DBClient defines the db client.
 type DBClient interface{ dynamodbiface.DynamoDBAPI }
 
 // DynamodbWrapper provides the API methods for interacting with dynamo db

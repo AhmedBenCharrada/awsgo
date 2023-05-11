@@ -8,7 +8,7 @@ import (
 )
 
 // Create implements Commands
-func (d *dynamodbWrapper[T]) Create(ctx context.Context, entity T) (DynamoPrimaryKey, error) {
+func (d *DBWrapper[T]) Create(ctx context.Context, entity T) (DynamoPrimaryKey, error) {
 	dbMap, _ := entity.Marshal()
 	partKey, err := addPrimaryKey(dbMap, d.conf.TableInfo.PrimaryKey.PartitionKey)
 
@@ -45,7 +45,7 @@ func (d *dynamodbWrapper[T]) Create(ctx context.Context, entity T) (DynamoPrimar
 }
 
 // Update implements Commands
-func (d *dynamodbWrapper[T]) Update(ctx context.Context, primaryKey DynamoPrimaryKey, values []DynamoAttribute) error {
+func (d *DBWrapper[T]) Update(ctx context.Context, primaryKey DynamoPrimaryKey, values []DynamoAttribute) error {
 	// prepare the partition and the sort keys
 	partKey, sortKey, err := preparePartSortKey(primaryKey)
 	if err != nil {
@@ -71,7 +71,7 @@ func (d *dynamodbWrapper[T]) Update(ctx context.Context, primaryKey DynamoPrimar
 }
 
 // Delete implements Commands
-func (d *dynamodbWrapper[T]) Delete(ctx context.Context, primaryKey DynamoPrimaryKey) error {
+func (d *DBWrapper[T]) Delete(ctx context.Context, primaryKey DynamoPrimaryKey) error {
 	// prepare the partition and the sort keys
 	partKey, sortKey, err := preparePartSortKey(primaryKey)
 	if err != nil {

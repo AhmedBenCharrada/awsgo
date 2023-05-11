@@ -27,7 +27,8 @@ func (d *DynamoAttr) IsEmpty() bool {
 	return d.Value.S == nil
 }
 
-type dynamoExpressionBuilder struct {
+// DynamoExpressionBuilder dynamo expression builder.
+type DynamoExpressionBuilder struct {
 	tableName string
 	partKey   DynamoAttr
 	sortKey   *DynamoAttr
@@ -35,27 +36,27 @@ type dynamoExpressionBuilder struct {
 }
 
 // NewExpressionBuilder creates a new dynamo update builder.
-func NewExpressionBuilder(tableName string) *dynamoExpressionBuilder {
-	return &dynamoExpressionBuilder{
+func NewExpressionBuilder(tableName string) *DynamoExpressionBuilder {
+	return &DynamoExpressionBuilder{
 		tableName:     tableName,
 		UpdateBuilder: expression.UpdateBuilder{},
 	}
 }
 
 // WithPartitionKey sets the partition key
-func (b *dynamoExpressionBuilder) WithPartitionKey(key DynamoAttr) *dynamoExpressionBuilder {
+func (b *DynamoExpressionBuilder) WithPartitionKey(key DynamoAttr) *DynamoExpressionBuilder {
 	b.partKey = key
 	return b
 }
 
 // WithSortKey sets the sort key
-func (b *dynamoExpressionBuilder) WithSortKey(key *DynamoAttr) *dynamoExpressionBuilder {
+func (b *DynamoExpressionBuilder) WithSortKey(key *DynamoAttr) *DynamoExpressionBuilder {
 	b.sortKey = key
 	return b
 }
 
 // WithUpdateField sets an update field.
-func (b *dynamoExpressionBuilder) WithUpdateField(name string, value interface{}) *dynamoExpressionBuilder {
+func (b *DynamoExpressionBuilder) WithUpdateField(name string, value interface{}) *DynamoExpressionBuilder {
 	b.UpdateBuilder = b.UpdateBuilder.Set(
 		expression.Name(name),
 		expression.Value(value),
@@ -66,7 +67,7 @@ func (b *dynamoExpressionBuilder) WithUpdateField(name string, value interface{}
 
 // BuildUpdateItemInput builds the update item request.
 // Todo: consider adding conditional update.
-func (b *dynamoExpressionBuilder) BuildUpdateItemInput() (*dynamodb.UpdateItemInput, error) {
+func (b *DynamoExpressionBuilder) BuildUpdateItemInput() (*dynamodb.UpdateItemInput, error) {
 	if b.partKey.IsEmpty() {
 		return nil, ErrInvalidPartitionKey
 	}
@@ -89,7 +90,7 @@ func (b *dynamoExpressionBuilder) BuildUpdateItemInput() (*dynamodb.UpdateItemIn
 
 // BuildDeleteItemInput builds the delete item request
 // Todo: consider adding conditional delete
-func (b *dynamoExpressionBuilder) BuildDeleteItemInput() (*dynamodb.DeleteItemInput, error) {
+func (b *DynamoExpressionBuilder) BuildDeleteItemInput() (*dynamodb.DeleteItemInput, error) {
 	if err := b.validateKeys(); err != nil {
 		return nil, err
 	}
@@ -101,7 +102,7 @@ func (b *dynamoExpressionBuilder) BuildDeleteItemInput() (*dynamodb.DeleteItemIn
 }
 
 // BuildGetItemInput builds the get item request
-func (b *dynamoExpressionBuilder) BuildGetItemInput() (*dynamodb.GetItemInput, error) {
+func (b *DynamoExpressionBuilder) BuildGetItemInput() (*dynamodb.GetItemInput, error) {
 	if err := b.validateKeys(); err != nil {
 		return nil, err
 	}
@@ -113,7 +114,7 @@ func (b *dynamoExpressionBuilder) BuildGetItemInput() (*dynamodb.GetItemInput, e
 }
 
 // BuildBatchGetItemInput builds batch get item input
-func (b *dynamoExpressionBuilder) BuildBatchGetItemInput(keys ...DynamoPrimaryKey) (*dynamodb.BatchGetItemInput, error) {
+func (b *DynamoExpressionBuilder) BuildBatchGetItemInput(keys ...DynamoPrimaryKey) (*dynamodb.BatchGetItemInput, error) {
 	queries := make([]map[string]*dynamodb.AttributeValue, 0, len(keys))
 
 	for _, key := range keys {
@@ -139,7 +140,7 @@ func (b *dynamoExpressionBuilder) BuildBatchGetItemInput(keys ...DynamoPrimaryKe
 }
 
 // BuildScanInput builds the dynamo scan input.
-func (b *dynamoExpressionBuilder) BuildScanInput(index *string, filter *Criteria, lastEvaluatedKey *DynamoPrimaryKey, limit int64) (*dynamodb.ScanInput, error) {
+func (b *DynamoExpressionBuilder) BuildScanInput(index *string, filter *Criteria, lastEvaluatedKey *DynamoPrimaryKey, limit int64) (*dynamodb.ScanInput, error) {
 	startKey, err := getLastEvaluatedKey(lastEvaluatedKey)
 	if err != nil {
 		return nil, err
@@ -176,7 +177,7 @@ func (b *dynamoExpressionBuilder) BuildScanInput(index *string, filter *Criteria
 }
 
 // BuildQueryInput builds dynamo query input.
-func (b *dynamoExpressionBuilder) BuildQueryInput(index *string, partitionKey DynamoAttribute, filter *Criteria, lastEvaluatedKey *DynamoPrimaryKey, limit int64) (*dynamodb.QueryInput, error) {
+func (b *DynamoExpressionBuilder) BuildQueryInput(index *string, partitionKey DynamoAttribute, filter *Criteria, lastEvaluatedKey *DynamoPrimaryKey, limit int64) (*dynamodb.QueryInput, error) {
 	startKey, err := getLastEvaluatedKey(lastEvaluatedKey)
 	if err != nil {
 		return nil, err
@@ -211,7 +212,7 @@ func (b *dynamoExpressionBuilder) BuildQueryInput(index *string, partitionKey Dy
 	}, err
 }
 
-func (b *dynamoExpressionBuilder) validateKeys() error {
+func (b *DynamoExpressionBuilder) validateKeys() error {
 	if b.partKey.IsEmpty() {
 		return ErrInvalidPartitionKey
 	}

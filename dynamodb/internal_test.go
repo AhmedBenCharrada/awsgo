@@ -6,8 +6,8 @@ import "github.com/aws/aws-sdk-go/service/dynamodb"
  The below section is internal for validating the interface implementation
 */
 
-var _ Commands[_entity] = (*dynamodbWrapper[_entity])(nil)
-var _ Queries[_entity] = (*dynamodbWrapper[_entity])(nil)
+var _ Commands[_entity] = (*DBWrapper[_entity])(nil)
+var _ Queries[_entity] = (*DBWrapper[_entity])(nil)
 
 type _entity struct{}
 

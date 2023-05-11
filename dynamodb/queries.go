@@ -20,7 +20,7 @@ type findOutput struct {
 }
 
 // Find implements Queries
-func (d *dynamodbWrapper[T]) Find(ctx context.Context, req Request) (Page[T], error) {
+func (d *DBWrapper[T]) Find(ctx context.Context, req Request) (Page[T], error) {
 	if req.Size == 0 {
 		return Page[T]{}, nil
 	}
@@ -93,7 +93,7 @@ func find(ctx context.Context, client DBClient, table string, req Request) (*fin
 }
 
 // Get implements Queries
-func (d *dynamodbWrapper[T]) GetItem(ctx context.Context, primaryKey DynamoPrimaryKey) (*T, error) {
+func (d *DBWrapper[T]) GetItem(ctx context.Context, primaryKey DynamoPrimaryKey) (*T, error) {
 	// prepare the partition and the sort keys
 	partKey, sortKey, err := preparePartSortKey(primaryKey)
 	if err != nil {
@@ -125,7 +125,7 @@ func (d *dynamodbWrapper[T]) GetItem(ctx context.Context, primaryKey DynamoPrima
 }
 
 // GetByIDs implements Queries
-func (d *dynamodbWrapper[T]) GetItems(ctx context.Context, ids []DynamoPrimaryKey) ([]T, []DynamoPrimaryKey, error) {
+func (d *DBWrapper[T]) GetItems(ctx context.Context, ids []DynamoPrimaryKey) ([]T, []DynamoPrimaryKey, error) {
 	partitions := utils.Partition(ids, 25)
 
 	ch := make(chan resp[T])
@@ -157,7 +157,7 @@ func (d *dynamodbWrapper[T]) GetItems(ctx context.Context, ids []DynamoPrimaryKe
 	return res, unprocessedKeys, nil
 }
 
-func (d *dynamodbWrapper[T]) load(ctx context.Context, wg *sync.WaitGroup, ch chan<- resp[T], ids ...DynamoPrimaryKey) {
+func (d *DBWrapper[T]) load(ctx context.Context, wg *sync.WaitGroup, ch chan<- resp[T], ids ...DynamoPrimaryKey) {
 	defer wg.Done()
 
 	// build the batch get item query
@@ -214,7 +214,7 @@ func (d *dynamodbWrapper[T]) load(ctx context.Context, wg *sync.WaitGroup, ch ch
 	ch <- res
 }
 
-func (d *dynamodbWrapper[T]) parse(items []map[string]*dynamodb.AttributeValue) ([]T, error) {
+func (d *DBWrapper[T]) parse(items []map[string]*dynamodb.AttributeValue) ([]T, error) {
 	// parse response and accumulate returned items
 	data := make([]T, 0, len(items))
 	for _, item := range items {

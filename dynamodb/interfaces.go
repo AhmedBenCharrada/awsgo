@@ -57,7 +57,7 @@ type Page[T Entity[T]] struct {
 
 // Queries ...
 type Queries[T Entity[T]] interface {
-	// Find retrieves all items that match the provided condition(s).
+	// Find retrieves a page of items that match the provided condition(s).
 	Find(ctx context.Context, req Request) (Page[T], error)
 
 	// GetItem extracts and returns an item by its (partition, (sort)?) key.

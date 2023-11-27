@@ -1,0 +1,8 @@
+coverage:
+  range: 50...75
+  round: down
+  precision: 2
+
+codecov:
+  bot: "codecov-agent"
+  require_ci_to_pass: yes

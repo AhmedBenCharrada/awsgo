@@ -1,9 +1,10 @@
 package utils_test
 
 import (
-	"awsgo/utils"
 	"math"
 	"testing"
+
+	"github.com/AhmedBenCharrada/awsgo/utils"
 
 	"github.com/stretchr/testify/assert"
 )

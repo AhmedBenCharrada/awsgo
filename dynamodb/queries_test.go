@@ -1,11 +1,12 @@
 package dynamodb_test
 
 import (
-	dynamo "awsgo/dynamodb"
-	"awsgo/mocks"
 	"context"
 	"fmt"
 	"testing"
+
+	dynamo "github.com/AhmedBenCharrada/awsgo/dynamodb"
+	"github.com/AhmedBenCharrada/awsgo/mocks"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"

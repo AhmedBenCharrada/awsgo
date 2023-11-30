@@ -1,11 +1,12 @@
 package dy_test
 
 import (
-	dy "awsgo/dynamodb/v2"
-	"awsgo/mocks"
 	"context"
 	"fmt"
 	"testing"
+
+	dy "github.com/AhmedBenCharrada/awsgo/dynamodb/v2"
+	"github.com/AhmedBenCharrada/awsgo/mocks"
 
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"

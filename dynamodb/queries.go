@@ -1,9 +1,10 @@
 package dynamodb
 
 import (
-	"awsgo/utils"
 	"context"
 	"sync"
+
+	"github.com/AhmedBenCharrada/awsgo/utils"
 
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 )

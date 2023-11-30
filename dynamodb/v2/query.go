@@ -1,10 +1,11 @@
 package dy
 
 import (
-	"awsgo/utils"
 	"context"
 	"fmt"
 	"sync"
+
+	"github.com/AhmedBenCharrada/awsgo/utils"
 
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"

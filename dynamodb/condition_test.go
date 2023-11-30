@@ -1,8 +1,9 @@
 package dynamodb_test
 
 import (
-	"awsgo/dynamodb"
 	"testing"
+
+	"github.com/AhmedBenCharrada/awsgo/dynamodb"
 
 	"github.com/stretchr/testify/assert"
 )

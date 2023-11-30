@@ -1,4 +1,4 @@
-module awsgo
+module github.com/AhmedBenCharrada/awsgo
 
 go 1.21
 

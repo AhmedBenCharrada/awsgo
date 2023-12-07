@@ -1,6 +1,6 @@
-package dynamodb
+package dy
 
-import "github.com/aws/aws-sdk-go/service/dynamodb/expression"
+import "github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 
 // Operator ..
 type Operator int

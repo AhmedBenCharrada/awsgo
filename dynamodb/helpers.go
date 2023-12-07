@@ -1,13 +1,13 @@
-package dynamodb
+package dy
 
 import (
 	"fmt"
 	"math/rand"
 	"strconv"
+	"strings"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/google/uuid"
 )
 
@@ -32,20 +32,20 @@ func preparePartSortKey(primaryKey DynamoPrimaryKey) (partKey DynamoAttr, sortKe
 	return
 }
 
-func addPrimaryKey(dbMap map[string]*dynamodb.AttributeValue, metadata DynamoKeyMetadata) (DynamoAttribute, error) {
+func addPrimaryKey(dbMap map[string]types.AttributeValue, metadata DynamoKeyMetadata) (DynamoAttribute, error) {
 	dynamoAttrib := DynamoAttribute{
 		KeyName: metadata.Name,
 		KeyType: metadata.KeyType,
 	}
 	// getting the partition key
-	k, ok := dbMap[string(metadata.Name)]
+	k, ok := dbMap[strings.ToLower(string(metadata.Name))]
 
 	// if partition key read from the config is not found then it returns an error
 	if !ok {
 		return dynamoAttrib, ErrKeyNotFound
 	}
 
-	val, empty := getValueOf(*k, metadata.KeyType)
+	val, empty := getValueOf(k, metadata.KeyType)
 
 	if !empty {
 		dynamoAttrib.Value = val
@@ -63,7 +63,7 @@ func addPrimaryKey(dbMap map[string]*dynamodb.AttributeValue, metadata DynamoKey
 	return dynamoAttrib, nil
 }
 
-func initDynamoKeyValue(attribute DynamoKeyMetadata) (*dynamodb.AttributeValue, interface{}, error) {
+func initDynamoKeyValue(attribute DynamoKeyMetadata) (types.AttributeValue, interface{}, error) {
 	switch attribute.KeyType {
 	case String:
 		val := uuid.NewString()
@@ -95,30 +95,30 @@ func createDynamoAttribute(name string, value interface{}, KeyType DBKeyType) (D
 	}, nil
 }
 
-func newDynamoAttributeValue(value interface{}, KeyType DBKeyType) (*dynamodb.AttributeValue, error) {
+func newDynamoAttributeValue(value interface{}, KeyType DBKeyType) (types.AttributeValue, error) {
 	switch KeyType {
 	case String:
-		return &dynamodb.AttributeValue{
-			S: aws.String(fmt.Sprintf("%v", value)),
+		return &types.AttributeValueMemberS{
+			Value: fmt.Sprintf("%v", value),
 		}, nil
 	case Number:
-		return &dynamodb.AttributeValue{
-			N: aws.String(fmt.Sprintf("%v", value)),
+		return &types.AttributeValueMemberN{
+			Value: fmt.Sprintf("%v", value),
 		}, nil
 	case Boolean:
 		b, ok := value.(bool)
 		if !ok {
 			return nil, fmt.Errorf("%v cannot be casted to bool", value)
 		}
-		return &dynamodb.AttributeValue{
-			BOOL: aws.Bool(b),
+		return &types.AttributeValueMemberBOOL{
+			Value: b,
 		}, nil
 	}
 
 	return nil, ErrInvalidDBKeyType
 }
 
-func extractUnprocessedKeys(keys []map[string]*dynamodb.AttributeValue, partitionKey DynamoKeyMetadata, sortKeyMeta *DynamoKeyMetadata) ([]DynamoPrimaryKey, error) {
+func extractUnprocessedKeys(keys []map[string]types.AttributeValue, partitionKey DynamoKeyMetadata, sortKeyMeta *DynamoKeyMetadata) ([]DynamoPrimaryKey, error) {
 	primaryKeys := make([]DynamoPrimaryKey, 0)
 	for _, key := range keys {
 		if len(key) == 0 {
@@ -136,7 +136,7 @@ func extractUnprocessedKeys(keys []map[string]*dynamodb.AttributeValue, partitio
 	return primaryKeys, nil
 }
 
-func extractPrimaryKey(keys map[string]*dynamodb.AttributeValue, partitionKey DynamoKeyMetadata, sortKeyMeta *DynamoKeyMetadata) (*DynamoPrimaryKey, error) {
+func extractPrimaryKey(keys map[string]types.AttributeValue, partitionKey DynamoKeyMetadata, sortKeyMeta *DynamoKeyMetadata) (*DynamoPrimaryKey, error) {
 	if len(keys) == 0 {
 		return nil, nil
 	}
@@ -158,13 +158,17 @@ func extractPrimaryKey(keys map[string]*dynamodb.AttributeValue, partitionKey Dy
 	}, nil
 }
 
-func getDynamoAttribute(attributes map[string]*dynamodb.AttributeValue, meta DynamoKeyMetadata) *DynamoAttribute {
+func getDynamoAttribute(attributes map[string]types.AttributeValue, meta DynamoKeyMetadata) *DynamoAttribute {
 	attr := attributes[string(meta.Name)]
 	if attr == nil {
 		return nil
 	}
 
-	val, _ := getValueOf(*attr, meta.KeyType)
+	val, empty := getValueOf(attr, meta.KeyType)
+	if empty {
+		return nil
+	}
+
 	return &DynamoAttribute{
 		KeyName: meta.Name,
 		KeyType: meta.KeyType,
@@ -183,20 +187,40 @@ func extractMetadata(attrib *DynamoAttribute) *DynamoKeyMetadata {
 	}
 }
 
-func getValueOf(attribute dynamodb.AttributeValue, DBKeyType DBKeyType) (val interface{}, empty bool) {
+func getValueOf(attribute types.AttributeValue, DBKeyType DBKeyType) (val interface{}, empty bool) {
 	switch DBKeyType {
 	case String:
-		return attribute.S, attribute.S == nil || *attribute.S == ""
+		v, ok := attribute.(*types.AttributeValueMemberS)
+		if !ok {
+			return "", true
+		}
+		return v.Value, v.Value == ""
 	case Number:
-		return attribute.N, attribute.N == nil || *attribute.N == ""
+		v, ok := attribute.(*types.AttributeValueMemberN)
+		if !ok {
+			return "", true
+		}
+		return v.Value, v.Value == ""
 	case Boolean:
-		return attribute.BOOL, attribute.BOOL == nil
+		v, ok := attribute.(*types.AttributeValueMemberBOOL)
+		if !ok {
+			return false, true
+		}
+		return v.Value, false
 	}
 
 	return nil, true
 }
 
 func randBool() bool {
-	rand.Seed(time.Now().UnixNano())
 	return rand.Intn(2) == 1
+}
+
+func toLowerCaseKeys(m map[string]types.AttributeValue) map[string]types.AttributeValue {
+	newMap := make(map[string]types.AttributeValue)
+	for k, v := range m {
+		newMap[strings.ToLower(k)] = v
+	}
+
+	return newMap
 }

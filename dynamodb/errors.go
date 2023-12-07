@@ -1,4 +1,4 @@
-package dynamodb
+package dy
 
 import "fmt"
 

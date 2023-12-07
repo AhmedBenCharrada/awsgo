@@ -1,92 +1,77 @@
-package dynamodb_test
+package dy_test
 
 import (
 	"context"
 	"fmt"
 	"testing"
 
-	dynamo "github.com/AhmedBenCharrada/awsgo/dynamodb"
+	dy "github.com/AhmedBenCharrada/awsgo/dynamodb"
 	"github.com/AhmedBenCharrada/awsgo/mocks"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func TestFind_WithScan(t *testing.T) {
-	dbConfig := dynamo.DBConfig{
-		TableInfo: dynamo.TableInfo{
-			TableName: "",
-			PrimaryKey: dynamo.DBPrimaryKeyNames{
-				PartitionKey: dynamo.DynamoKeyMetadata{
-					Name:    "group_id",
-					KeyType: dynamo.String,
-				},
-				SortKey: &dynamo.DynamoKeyMetadata{
-					Name:    "id",
-					KeyType: dynamo.Number,
-				},
+var dbConfig = dy.DBConfig{
+	TableInfo: dy.TableInfo{
+		TableName: "tableName",
+		PrimaryKey: dy.DBPrimaryKeyNames{
+			PartitionKey: dy.DynamoKeyMetadata{
+				Name:    "groupID",
+				KeyType: dy.Number,
+			},
+			SortKey: &dy.DynamoKeyMetadata{
+				Name:    "id",
+				KeyType: dy.String,
 			},
 		},
+	},
+}
+
+func TestDynamodb_Find_WithScan(t *testing.T) {
+	dbWithNoError := func(t *testing.T) dy.DynamoClient {
+		m := mocks.NewDynamoClient(t)
+		m.On("Scan", mock.Anything, mock.Anything).Return(&dynamodb.ScanOutput{
+			Items:            getItemAttributeValuesTestData(),
+			LastEvaluatedKey: getLastEvaluatedKeysTestData(),
+		}, nil)
+
+		return m
 	}
 
-	dbWithNoError := mocks.DBClient{}
-	dbWithNoError.On("ScanWithContext", mock.Anything, mock.Anything).Return(&dynamodb.ScanOutput{
-		Items: []map[string]*dynamodb.AttributeValue{
-			{
-				"id":         {S: aws.String("123")},
-				"group_id":   {N: aws.String("1234")},
-				"enabled":    {BOOL: aws.Bool(true)},
-				"first_name": {S: aws.String("name")},
-				"last_name":  {S: aws.String("l_name")},
-			},
-		},
-		LastEvaluatedKey: map[string]*dynamodb.AttributeValue{
-			"id":       {S: aws.String("123")},
-			"group_id": {N: aws.String("1234")},
-		},
-	}, nil)
-
-	dbWithError := mocks.DBClient{}
-	dbWithError.On("ScanWithContext", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("error"))
-
-	dbWithNotFoundItem := mocks.DBClient{}
-	dbWithNotFoundItem.On("ScanWithContext", mock.Anything, mock.Anything).Return(&dynamodb.ScanOutput{
-		Items: []map[string]*dynamodb.AttributeValue{},
-	}, nil)
-
-	validReq := dynamo.Request{
+	validReq := dy.Request{
 		Size: 3,
 	}
 
 	cases := []struct {
 		name       string
-		dbClient   dynamo.DBClient
-		req        dynamo.Request
+		dbClient   func(*testing.T) dy.DynamoClient
+		req        dy.Request
 		itemsCount int
 		hasError   bool
 	}{
 		{
 			name:       "successfully",
-			dbClient:   &dbWithNoError,
+			dbClient:   dbWithNoError,
 			req:        validReq,
 			itemsCount: 1,
 		},
 		{
 			name:     "with last evaluated key",
-			dbClient: &dbWithNoError,
-			req: dynamo.Request{
+			dbClient: dbWithNoError,
+			req: dy.Request{
 				Size: 3,
-				LastEvaluatedKey: &dynamo.DynamoPrimaryKey{
-					PartitionKey: dynamo.DynamoAttribute{
+				LastEvaluatedKey: &dy.DynamoPrimaryKey{
+					PartitionKey: dy.DynamoAttribute{
 						KeyName: "id",
-						KeyType: dynamo.String,
+						KeyType: dy.String,
 						Value:   "123",
 					},
-					SortKey: &dynamo.DynamoAttribute{
-						KeyName: "group_id",
-						KeyType: dynamo.Number,
+					SortKey: &dy.DynamoAttribute{
+						KeyName: "groupID",
+						KeyType: dy.Number,
 						Value:   1234,
 					},
 				},
@@ -94,120 +79,112 @@ func TestFind_WithScan(t *testing.T) {
 			itemsCount: 1,
 		},
 		{
-			name:     "page size == 0",
-			dbClient: &dbWithNoError,
-			req: dynamo.Request{
+			name: "page size == 0",
+			dbClient: func(t *testing.T) dy.DynamoClient {
+				return mocks.NewDynamoClient(t)
+			},
+			req: dy.Request{
 				Size: 0,
 			},
 			itemsCount: 0,
 		},
 		{
-			name:       "with error",
-			dbClient:   &dbWithError,
+			name: "with error",
+			dbClient: func(t *testing.T) dy.DynamoClient {
+				m := mocks.NewDynamoClient(t)
+				m.On("Scan", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("error"))
+				return m
+			},
 			req:        validReq,
 			itemsCount: 0,
 			hasError:   true,
 		},
 		{
-			name:     "with empty condition",
-			dbClient: &dbWithNoError,
-			req: dynamo.Request{
+			name: "with empty condition",
+			dbClient: func(t *testing.T) dy.DynamoClient {
+				return mocks.NewDynamoClient(t)
+			},
+			req: dy.Request{
 				Size:             validReq.Size,
 				LastEvaluatedKey: validReq.LastEvaluatedKey,
-				Conditions:       []dynamo.Criteria{*dynamo.NewCriteria()},
+				Conditions:       []dy.Criteria{*dy.NewCriteria()},
 			},
 			itemsCount: 0,
 			hasError:   true,
 		},
 		{
 			name:     "with 1 condition",
-			dbClient: &dbWithNoError,
-			req: dynamo.Request{
+			dbClient: dbWithNoError,
+			req: dy.Request{
 				Size:             validReq.Size,
 				LastEvaluatedKey: validReq.LastEvaluatedKey,
-				Conditions: []dynamo.Criteria{*dynamo.NewCriteria().
-					And("first_name", "name", dynamo.EQUAL),
+				Conditions: []dy.Criteria{*dy.NewCriteria().
+					And("firstName", "name", dy.EQUAL),
 				},
 			},
 			itemsCount: 1,
 		},
 		{
 			name:     "with 2 condition",
-			dbClient: &dbWithNoError,
-			req: dynamo.Request{
+			dbClient: dbWithNoError,
+			req: dy.Request{
 				Size:             validReq.Size,
 				LastEvaluatedKey: validReq.LastEvaluatedKey,
-				Conditions: []dynamo.Criteria{*dynamo.NewCriteria().
-					And("first_name", "name", dynamo.EQUAL),
-					*dynamo.NewCriteria().
-						And("last_name", "l_name", dynamo.GT)},
+				Conditions: []dy.Criteria{*dy.NewCriteria().
+					And("firstName", "name", dy.EQUAL),
+					*dy.NewCriteria().
+						And("lastName", "l_name", dy.GT)},
 			},
 			itemsCount: 1,
 		},
 		{
 			name: "with unmarshal error",
-			dbClient: func() dynamo.DBClient {
-				db := &mocks.DBClient{}
-				db.On("ScanWithContext", mock.Anything, mock.Anything).Return(&dynamodb.ScanOutput{
-					Items: []map[string]*dynamodb.AttributeValue{
+			dbClient: func(t *testing.T) dy.DynamoClient {
+				m := mocks.NewDynamoClient(t)
+				m.On("Scan", mock.Anything, mock.Anything).Return(&dynamodb.ScanOutput{
+					Items: []map[string]types.AttributeValue{
 						{
-							"name":        {S: aws.String("name")},
-							"family_name": {S: aws.String("l_name")},
+							"name":       &types.AttributeValueMemberS{Value: "name"},
+							"familyName": &types.AttributeValueMemberS{Value: "l_name"},
 						},
 					},
 				}, nil)
 
-				return db
-			}(),
+				return m
+			},
 			req:        validReq,
 			itemsCount: 0,
-			hasError:   true,
+			hasError:   false,
 		},
 		{
 			name: "with empty lastEvaluatedKey",
-			dbClient: func() dynamo.DBClient {
-				db := &mocks.DBClient{}
-				db.On("ScanWithContext", mock.Anything, mock.Anything).Return(&dynamodb.ScanOutput{
-					Items: []map[string]*dynamodb.AttributeValue{
-						{
-							"id":         {S: aws.String("123")},
-							"group_id":   {N: aws.String("1234")},
-							"enabled":    {BOOL: aws.Bool(true)},
-							"first_name": {S: aws.String("name")},
-							"last_name":  {S: aws.String("l_name")},
-						},
-					},
+			dbClient: func(t *testing.T) dy.DynamoClient {
+				db := mocks.NewDynamoClient(t)
+				db.On("Scan", mock.Anything, mock.Anything).Return(&dynamodb.ScanOutput{
+					Items: getItemAttributeValuesTestData(),
 				}, nil)
 
 				return db
-			}(),
+			},
 			req:        validReq,
 			itemsCount: 1,
 		},
 		{
 			name: "with wrong lastEvaluatedKey (for coverage)",
-			dbClient: func() dynamo.DBClient {
-				db := &mocks.DBClient{}
-				db.On("ScanWithContext", mock.Anything, mock.Anything).Return(&dynamodb.ScanOutput{
-					Items: []map[string]*dynamodb.AttributeValue{
-						{
-							"id":         {S: aws.String("123")},
-							"group_id":   {N: aws.String("1234")},
-							"enabled":    {BOOL: aws.Bool(true)},
-							"first_name": {S: aws.String("name")},
-							"last_name":  {S: aws.String("l_name")},
-						},
-					},
-					LastEvaluatedKey: map[string]*dynamodb.AttributeValue{
-						"part": {S: aws.String("123")},
-						"sort": {N: aws.String("1234")},
+			dbClient: func(t *testing.T) dy.DynamoClient {
+				db := mocks.NewDynamoClient(t)
+				db.On("Scan", mock.Anything, mock.Anything).Return(&dynamodb.ScanOutput{
+					Items: getItemAttributeValuesTestData(),
+					LastEvaluatedKey: map[string]types.AttributeValue{
+						"part": &types.AttributeValueMemberN{Value: "123"},
+						"sort": &types.AttributeValueMemberS{Value: "1234"},
 					},
 				}, nil)
 
 				return db
-			}(),
+			},
 			req:        validReq,
-			itemsCount: 1,
+			itemsCount: 0,
 			hasError:   true,
 		},
 	}
@@ -215,7 +192,7 @@ func TestFind_WithScan(t *testing.T) {
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			db := dynamo.NewDynamoWrapper[entity](tc.dbClient, dbConfig)
+			db := dy.NewClient[entity](tc.dbClient(t), dbConfig)
 
 			res, err := db.Find(context.Background(), tc.req)
 			assert.Equal(t, !tc.hasError, err == nil, err)
@@ -224,230 +201,178 @@ func TestFind_WithScan(t *testing.T) {
 	}
 }
 
-func TestFind_WithQuery(t *testing.T) {
-	dbConfig := dynamo.DBConfig{
-		TableInfo: dynamo.TableInfo{
-			TableName: "",
-			PrimaryKey: dynamo.DBPrimaryKeyNames{
-				PartitionKey: dynamo.DynamoKeyMetadata{
-					Name:    "group_id",
-					KeyType: dynamo.String,
-				},
-				SortKey: &dynamo.DynamoKeyMetadata{
-					Name:    "id",
-					KeyType: dynamo.Number,
-				},
-			},
-		},
-	}
-
-	dbWithNoError := mocks.DBClient{}
-	dbWithNoError.On("QueryWithContext", mock.Anything, mock.Anything).Return(&dynamodb.QueryOutput{
-		Items: []map[string]*dynamodb.AttributeValue{
-			{
-				"id":         {S: aws.String("123")},
-				"group_id":   {N: aws.String("1234")},
-				"enabled":    {BOOL: aws.Bool(true)},
-				"first_name": {S: aws.String("name")},
-				"last_name":  {S: aws.String("l_name")},
-			},
-		},
-		LastEvaluatedKey: map[string]*dynamodb.AttributeValue{
-			"id":       {S: aws.String("123")},
-			"group_id": {N: aws.String("1234")},
-		},
-	}, nil)
-
-	dbWithError := mocks.DBClient{}
-	dbWithError.On("QueryWithContext", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("error"))
-
-	dbWithNotFoundItem := mocks.DBClient{}
-	dbWithNotFoundItem.On("QueryWithContext", mock.Anything, mock.Anything).Return(&dynamodb.QueryOutput{
-		Items: []map[string]*dynamodb.AttributeValue{},
-	}, nil)
-
-	validReq := dynamo.Request{
+func TestDynamodb_WithQuery(t *testing.T) {
+	validReq := dy.Request{
 		Size: 3,
-		PartitionKey: &dynamo.DynamoAttribute{
-			KeyName: "group_id",
-			KeyType: dynamo.String,
+		PartitionKey: &dy.DynamoAttribute{
+			KeyName: "groupID",
+			KeyType: dy.String,
 			Value:   "123",
 		},
+	}
+	withNoErrorDB := func(t *testing.T) dy.DynamoClient {
+		m := mocks.NewDynamoClient(t)
+		m.On("Query", mock.Anything, mock.Anything).Return(&dynamodb.QueryOutput{
+			Items:            getItemAttributeValuesTestData(),
+			LastEvaluatedKey: getLastEvaluatedKeysTestData(),
+		}, nil)
+
+		return m
 	}
 
 	cases := []struct {
 		name       string
-		dbClient   dynamo.DBClient
-		req        dynamo.Request
+		dbClient   func(*testing.T) dy.DynamoClient
+		req        dy.Request
 		itemsCount int
 		hasError   bool
 	}{
 		{
 			name:       "successfully",
-			dbClient:   &dbWithNoError,
+			dbClient:   withNoErrorDB,
 			req:        validReq,
 			itemsCount: 1,
 		},
 		{
 			name:     "with last evaluated key",
-			dbClient: &dbWithNoError,
-			req: dynamo.Request{
-				Size: 3,
-				PartitionKey: &dynamo.DynamoAttribute{
-					KeyName: "group_id",
-					KeyType: dynamo.String,
-					Value:   "123",
-				},
-				LastEvaluatedKey: &dynamo.DynamoPrimaryKey{
-					PartitionKey: dynamo.DynamoAttribute{
-						KeyName: "id",
-						KeyType: dynamo.String,
-						Value:   "123",
-					},
-					SortKey: &dynamo.DynamoAttribute{
-						KeyName: "group_id",
-						KeyType: dynamo.Number,
-						Value:   1234,
-					},
+			dbClient: withNoErrorDB,
+			req: dy.Request{
+				Size:         3,
+				PartitionKey: dy.NewDynamoNumberAttrib("groupID", "123"),
+				LastEvaluatedKey: &dy.DynamoPrimaryKey{
+					PartitionKey: *dy.NewDynamoNumberAttrib("groupID", "123"),
+					SortKey:      dy.NewDynamoNumberAttrib("groupID", "1234"),
 				},
 			},
 			itemsCount: 1,
 		},
 		{
-			name:     "page size == 0",
-			dbClient: &dbWithNoError,
-			req: dynamo.Request{
+			name: "page size == 0",
+			dbClient: func(t *testing.T) dy.DynamoClient {
+				return mocks.NewDynamoClient(t)
+			},
+			req: dy.Request{
 				Size: 0,
-				PartitionKey: &dynamo.DynamoAttribute{
-					KeyName: "group_id",
-					KeyType: dynamo.String,
+				PartitionKey: &dy.DynamoAttribute{
+					KeyName: "groupID",
+					KeyType: dy.Number,
 					Value:   "123",
 				},
 			},
 			itemsCount: 0,
 		},
 		{
-			name:       "with error",
-			dbClient:   &dbWithError,
+			name: "with error",
+			dbClient: func(t *testing.T) dy.DynamoClient {
+				m := mocks.NewDynamoClient(t)
+				m.On("Query", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("error"))
+				return m
+			},
 			req:        validReq,
 			itemsCount: 0,
 			hasError:   true,
 		},
 		{
-			name:     "with empty condition",
-			dbClient: &dbWithNoError,
-			req: dynamo.Request{
+			name: "with empty condition",
+			dbClient: func(t *testing.T) dy.DynamoClient {
+				return mocks.NewDynamoClient(t)
+			},
+			req: dy.Request{
 				Size: validReq.Size,
-				PartitionKey: &dynamo.DynamoAttribute{
-					KeyName: "group_id",
-					KeyType: dynamo.String,
+				PartitionKey: &dy.DynamoAttribute{
+					KeyName: "groupID",
+					KeyType: dy.Number,
 					Value:   "123",
 				},
 				LastEvaluatedKey: validReq.LastEvaluatedKey,
-				Conditions:       []dynamo.Criteria{*dynamo.NewCriteria()},
+				Conditions:       []dy.Criteria{*dy.NewCriteria()},
 			},
 			itemsCount: 0,
 			hasError:   true,
 		},
 		{
 			name:     "with 1 condition",
-			dbClient: &dbWithNoError,
-			req: dynamo.Request{
+			dbClient: withNoErrorDB,
+			req: dy.Request{
 				Size: validReq.Size,
-				PartitionKey: &dynamo.DynamoAttribute{
-					KeyName: "group_id",
-					KeyType: dynamo.String,
+				PartitionKey: &dy.DynamoAttribute{
+					KeyName: "groupID",
+					KeyType: dy.Number,
 					Value:   "123",
 				},
 				LastEvaluatedKey: validReq.LastEvaluatedKey,
-				Conditions: []dynamo.Criteria{*dynamo.NewCriteria().
-					And("first_name", "name", dynamo.EQUAL),
+				Conditions: []dy.Criteria{*dy.NewCriteria().
+					And("firstName", "name", dy.EQUAL),
 				},
 			},
 			itemsCount: 1,
 		},
 		{
 			name:     "with 2 condition",
-			dbClient: &dbWithNoError,
-			req: dynamo.Request{
+			dbClient: withNoErrorDB,
+			req: dy.Request{
 				Size: validReq.Size,
-				PartitionKey: &dynamo.DynamoAttribute{
-					KeyName: "group_id",
-					KeyType: dynamo.String,
+				PartitionKey: &dy.DynamoAttribute{
+					KeyName: "groupID",
+					KeyType: dy.Number,
 					Value:   "123",
 				},
 				LastEvaluatedKey: validReq.LastEvaluatedKey,
-				Conditions: []dynamo.Criteria{*dynamo.NewCriteria().
-					And("first_name", "name", dynamo.EQUAL),
-					*dynamo.NewCriteria().
-						And("last_name", "l_name", dynamo.GT)},
+				Conditions: []dy.Criteria{*dy.NewCriteria().
+					And("firstName", "name", dy.EQUAL),
+					*dy.NewCriteria().
+						And("lastName", "l_name", dy.GT)},
 			},
 			itemsCount: 1,
 		},
 		{
 			name: "with unmarshal error",
-			dbClient: func() dynamo.DBClient {
-				db := &mocks.DBClient{}
-				db.On("QueryWithContext", mock.Anything, mock.Anything).Return(&dynamodb.QueryOutput{
-					Items: []map[string]*dynamodb.AttributeValue{
+			dbClient: func(t *testing.T) dy.DynamoClient {
+				m := mocks.NewDynamoClient(t)
+				m.On("Query", mock.Anything, mock.Anything).Return(&dynamodb.QueryOutput{
+					Items: []map[string]types.AttributeValue{
 						{
-							"name":        {S: aws.String("name")},
-							"family_name": {S: aws.String("l_name")},
+							"name":       &types.AttributeValueMemberS{Value: "name"},
+							"familyName": &types.AttributeValueMemberS{Value: "l_name"},
 						},
 					},
 				}, nil)
 
-				return db
-			}(),
+				return m
+			},
 			req:        validReq,
 			itemsCount: 0,
-			hasError:   true,
+			hasError:   false,
 		},
 		{
 			name: "with empty lastEvaluatedKey",
-			dbClient: func() dynamo.DBClient {
-				db := &mocks.DBClient{}
-				db.On("QueryWithContext", mock.Anything, mock.Anything).Return(&dynamodb.QueryOutput{
-					Items: []map[string]*dynamodb.AttributeValue{
-						{
-							"id":         {S: aws.String("123")},
-							"group_id":   {N: aws.String("1234")},
-							"enabled":    {BOOL: aws.Bool(true)},
-							"first_name": {S: aws.String("name")},
-							"last_name":  {S: aws.String("l_name")},
-						},
-					},
+			dbClient: func(t *testing.T) dy.DynamoClient {
+				m := mocks.NewDynamoClient(t)
+				m.On("Query", mock.Anything, mock.Anything).Return(&dynamodb.QueryOutput{
+					Items: getItemAttributeValuesTestData(),
 				}, nil)
 
-				return db
-			}(),
+				return m
+			},
 			req:        validReq,
 			itemsCount: 1,
 		},
 		{
 			name: "with wrong lastEvaluatedKey (for coverage)",
-			dbClient: func() dynamo.DBClient {
-				db := &mocks.DBClient{}
-				db.On("QueryWithContext", mock.Anything, mock.Anything).Return(&dynamodb.QueryOutput{
-					Items: []map[string]*dynamodb.AttributeValue{
-						{
-							"id":         {S: aws.String("123")},
-							"group_id":   {N: aws.String("1234")},
-							"enabled":    {BOOL: aws.Bool(true)},
-							"first_name": {S: aws.String("name")},
-							"last_name":  {S: aws.String("l_name")},
-						},
-					},
-					LastEvaluatedKey: map[string]*dynamodb.AttributeValue{
-						"part": {S: aws.String("123")},
-						"sort": {N: aws.String("1234")},
+			dbClient: func(t *testing.T) dy.DynamoClient {
+				m := mocks.NewDynamoClient(t)
+				m.On("Query", mock.Anything, mock.Anything).Return(&dynamodb.QueryOutput{
+					Items: getItemAttributeValuesTestData(),
+					LastEvaluatedKey: map[string]types.AttributeValue{
+						"part": &types.AttributeValueMemberN{Value: "123"},
+						"sort": &types.AttributeValueMemberS{Value: "1234"},
 					},
 				}, nil)
 
-				return db
-			}(),
+				return m
+			},
 			req:        validReq,
-			itemsCount: 1,
+			itemsCount: 0,
 			hasError:   true,
 		},
 	}
@@ -455,7 +380,7 @@ func TestFind_WithQuery(t *testing.T) {
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			db := dynamo.NewDynamoWrapper[entity](tc.dbClient, dbConfig)
+			db := dy.NewClient[entity](tc.dbClient(t), dbConfig)
 
 			res, err := db.Find(context.Background(), tc.req)
 			assert.Equal(t, !tc.hasError, err == nil, err)
@@ -464,111 +389,104 @@ func TestFind_WithQuery(t *testing.T) {
 	}
 }
 
-func TestGet(t *testing.T) {
-	validDbConfig := dynamo.DBConfig{
-		TableInfo: dynamo.TableInfo{
-			TableName: "tableName",
-			PrimaryKey: dynamo.DBPrimaryKeyNames{
-				PartitionKey: dynamo.DynamoKeyMetadata{
-					Name:    "group_id",
-					KeyType: dynamo.String,
-				},
-				SortKey: &dynamo.DynamoKeyMetadata{
-					Name:    "id",
-					KeyType: dynamo.Number,
-				},
+func TestDynamodb_Get(t *testing.T) {
+	dbWithNoError := func(t *testing.T) dy.DynamoClient {
+		m := mocks.NewDynamoClient(t)
+		m.On("GetItem", mock.Anything, mock.Anything).Return(&dynamodb.GetItemOutput{
+			Item: map[string]types.AttributeValue{
+				"id":        &types.AttributeValueMemberS{Value: "123"},
+				"groupid":   &types.AttributeValueMemberN{Value: "1234"},
+				"enabled":   &types.AttributeValueMemberBOOL{Value: true},
+				"firstName": &types.AttributeValueMemberS{Value: "name"},
+				"lastName":  &types.AttributeValueMemberS{Value: "l_name"},
 			},
-		},
+		}, nil)
+		return m
 	}
 
-	dbWithNoError := mocks.DBClient{}
-	dbWithNoError.On("GetItemWithContext", mock.Anything, mock.Anything).Return(&dynamodb.GetItemOutput{
-		Item: map[string]*dynamodb.AttributeValue{
-			"id":         {S: aws.String("123")},
-			"group_id":   {N: aws.String("1234")},
-			"enabled":    {BOOL: aws.Bool(true)},
-			"first_name": {S: aws.String("name")},
-			"last_name":  {S: aws.String("l_name")},
-		},
-	}, nil)
-
-	dbWithError := mocks.DBClient{}
-	dbWithError.On("GetItemWithContext", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("error"))
-
-	dbWithNotFoundItem := mocks.DBClient{}
-	dbWithNotFoundItem.On("GetItemWithContext", mock.Anything, mock.Anything).Return(&dynamodb.GetItemOutput{}, nil)
-
-	validKeys := dynamo.DynamoPrimaryKey{
-		PartitionKey: dynamo.DynamoAttribute{
-			KeyName: "group_id",
-			KeyType: dynamo.String,
+	validKeys := dy.DynamoPrimaryKey{
+		PartitionKey: dy.DynamoAttribute{
+			KeyName: "groupID",
+			KeyType: dy.Number,
 			Value:   "123",
 		},
-		SortKey: &dynamo.DynamoAttribute{
+		SortKey: &dy.DynamoAttribute{
 			KeyName: "id",
-			KeyType: dynamo.String,
+			KeyType: dy.String,
 			Value:   "12345",
 		},
 	}
 
 	cases := []struct {
 		name     string
-		dbClient dynamo.DBClient
-		keys     dynamo.DynamoPrimaryKey
+		dbClient func(*testing.T) dy.DynamoClient
+		keys     dy.DynamoPrimaryKey
 		hasError bool
 	}{
 		{
 			name:     "successfully (with partition and sort keys)",
-			dbClient: &dbWithNoError,
+			dbClient: dbWithNoError,
 			keys:     validKeys,
 		},
 		{
 			name:     "successfully (with partition key only)",
-			dbClient: &dbWithNoError,
-			keys: dynamo.DynamoPrimaryKey{
-				PartitionKey: dynamo.DynamoAttribute{
-					KeyName: "group_id",
-					KeyType: dynamo.String,
+			dbClient: dbWithNoError,
+			keys: dy.DynamoPrimaryKey{
+				PartitionKey: dy.DynamoAttribute{
+					KeyName: "groupID",
+					KeyType: dy.String,
 					Value:   "123",
 				},
 			},
 		},
 		{
-			name:     "with db error",
-			dbClient: &dbWithError,
+			name: "with db error",
+			dbClient: func(t *testing.T) dy.DynamoClient {
+				m := mocks.NewDynamoClient(t)
+				m.On("GetItem", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("error"))
+				return m
+			},
 			keys:     validKeys,
 			hasError: true,
 		},
 		{
-			name:     "with not found item",
-			dbClient: &dbWithNotFoundItem,
+			name: "with not found item",
+			dbClient: func(t *testing.T) dy.DynamoClient {
+				m := mocks.NewDynamoClient(t)
+				m.On("GetItem", mock.Anything, mock.Anything).Return(&dynamodb.GetItemOutput{}, nil)
+				return m
+			},
 			keys:     validKeys,
 			hasError: true,
 		},
 		{
-			name:     "with create partition key error",
-			dbClient: &dbWithNoError,
-			keys: dynamo.DynamoPrimaryKey{
-				PartitionKey: dynamo.DynamoAttribute{
-					KeyName: "group_id",
-					KeyType: dynamo.DBKeyType(99), // invalid key type
+			name: "with create partition key error",
+			dbClient: func(t *testing.T) dy.DynamoClient {
+				return mocks.NewDynamoClient(t)
+			},
+			keys: dy.DynamoPrimaryKey{
+				PartitionKey: dy.DynamoAttribute{
+					KeyName: "groupID",
+					KeyType: dy.DBKeyType(99), // invalid key type
 					Value:   "123",
 				},
 			},
 			hasError: true,
 		},
 		{
-			name:     "with empty partition key value)",
-			dbClient: &dbWithNoError,
-			keys: dynamo.DynamoPrimaryKey{
-				PartitionKey: dynamo.DynamoAttribute{
-					KeyName: "group_id",
-					KeyType: dynamo.String,
+			name: "with empty partition key value)",
+			dbClient: func(t *testing.T) dy.DynamoClient {
+				return mocks.NewDynamoClient(t)
+			},
+			keys: dy.DynamoPrimaryKey{
+				PartitionKey: dy.DynamoAttribute{
+					KeyName: "groupID",
+					KeyType: dy.Number,
 					Value:   "",
 				},
-				SortKey: &dynamo.DynamoAttribute{
+				SortKey: &dy.DynamoAttribute{
 					KeyName: "id",
-					KeyType: dynamo.String,
+					KeyType: dy.String,
 					Value:   "",
 				},
 			},
@@ -579,13 +497,13 @@ func TestGet(t *testing.T) {
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			db := dynamo.NewDynamoWrapper[entity](tc.dbClient, validDbConfig)
+			db := dy.NewClient[entity](tc.dbClient(t), dbConfig)
 
 			item, err := db.GetItem(context.Background(), tc.keys)
 			assert.Equal(t, !tc.hasError, err == nil)
 			assert.Equal(t, tc.hasError, item == nil)
 			if !tc.hasError {
-				assert.Equal(t, "123", item.ID)
+				assert.Equal(t, "123", item.Id)
 				assert.NotNil(t, item.GroupID)
 				assert.Equal(t, 1234, *item.GroupID)
 				assert.NotNil(t, item.Enabled)
@@ -597,58 +515,28 @@ func TestGet(t *testing.T) {
 	}
 }
 
-func TestGetItems(t *testing.T) {
-	validDbConfig := dynamo.DBConfig{
-		TableInfo: dynamo.TableInfo{
-			TableName: "tableName",
-			PrimaryKey: dynamo.DBPrimaryKeyNames{
-				PartitionKey: dynamo.DynamoKeyMetadata{
-					Name:    "group_id",
-					KeyType: dynamo.String,
-				},
-				SortKey: &dynamo.DynamoKeyMetadata{
-					Name:    "id",
-					KeyType: dynamo.Number,
-				},
+func TestDynamodb_GetItems(t *testing.T) {
+	dbWithNoError := func(t *testing.T) dy.DynamoClient {
+		m := mocks.NewDynamoClient(t)
+		m.On("BatchGetItem", mock.Anything, mock.Anything).Return(&dynamodb.BatchGetItemOutput{
+			Responses: map[string][]map[string]types.AttributeValue{
+				dbConfig.TableInfo.TableName: getItemAttributeValuesTestData(),
 			},
-		},
+		}, nil)
+
+		return m
 	}
 
-	dbWithNoError := mocks.DBClient{}
-	dbWithNoError.On("BatchGetItemWithContext", mock.Anything, mock.Anything).Return(&dynamodb.BatchGetItemOutput{
-		Responses: map[string][]map[string]*dynamodb.AttributeValue{
-			validDbConfig.TableInfo.TableName: {
-				map[string]*dynamodb.AttributeValue{
-					"id":         {S: aws.String("123")},
-					"group_id":   {N: aws.String("1234")},
-					"enabled":    {BOOL: aws.Bool(true)},
-					"first_name": {S: aws.String("name")},
-					"last_name":  {S: aws.String("l_name")},
-				},
-			},
-		},
-	}, nil)
-
-	dbWithError := mocks.DBClient{}
-	dbWithError.On("BatchGetItemWithContext", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("error"))
-
-	dbWithNotFoundItem := mocks.DBClient{}
-	dbWithNotFoundItem.On("BatchGetItemWithContext", mock.Anything, mock.Anything).Return(&dynamodb.BatchGetItemOutput{
-		Responses: map[string][]map[string]*dynamodb.AttributeValue{
-			validDbConfig.TableInfo.TableName: {},
-		},
-	}, nil)
-
-	validKeys := []dynamo.DynamoPrimaryKey{
+	validKeys := []dy.DynamoPrimaryKey{
 		{
-			PartitionKey: dynamo.DynamoAttribute{
-				KeyName: "group_id",
-				KeyType: dynamo.String,
+			PartitionKey: dy.DynamoAttribute{
+				KeyName: "groupID",
+				KeyType: dy.Number,
 				Value:   "123",
 			},
-			SortKey: &dynamo.DynamoAttribute{
+			SortKey: &dy.DynamoAttribute{
 				KeyName: "id",
-				KeyType: dynamo.String,
+				KeyType: dy.String,
 				Value:   "12345",
 			},
 		},
@@ -656,62 +544,62 @@ func TestGetItems(t *testing.T) {
 
 	cases := []struct {
 		name                string
-		dbConfig            dynamo.DBConfig
-		dbClient            dynamo.DBClient
-		keys                []dynamo.DynamoPrimaryKey
+		dbConfig            dy.DBConfig
+		dbClient            func(*testing.T) dy.DynamoClient
+		keys                []dy.DynamoPrimaryKey
 		itemsCount          int
 		remainingItemsCount int
 		hasError            bool
 	}{
 		{
 			name:       "successfully",
-			dbConfig:   validDbConfig,
-			dbClient:   &dbWithNoError,
+			dbConfig:   dbConfig,
+			dbClient:   dbWithNoError,
 			keys:       validKeys,
 			itemsCount: 1,
 		},
 		{
-			name: "nsuccessfully",
-			dbConfig: dynamo.DBConfig{
-				TableInfo: dynamo.TableInfo{
+			name: "n-successfully",
+			dbConfig: dy.DBConfig{
+				TableInfo: dy.TableInfo{
 					TableName: "tableName",
-					PrimaryKey: dynamo.DBPrimaryKeyNames{
-						PartitionKey: dynamo.DynamoKeyMetadata{
+					PrimaryKey: dy.DBPrimaryKeyNames{
+						PartitionKey: dy.DynamoKeyMetadata{
 							Name:    "id",
-							KeyType: dynamo.String,
+							KeyType: dy.String,
 						},
 					},
 				},
 			},
-			dbClient: func() dynamo.DBClient {
-				m := mocks.DBClient{}
-				m.On("BatchGetItemWithContext", mock.Anything, mock.Anything).Return(&dynamodb.BatchGetItemOutput{
-					Responses: map[string][]map[string]*dynamodb.AttributeValue{
-						validDbConfig.TableInfo.TableName: {
-							map[string]*dynamodb.AttributeValue{
-								"id":      {S: aws.String("123")},
-								"enabled": {BOOL: aws.Bool(true)},
+			dbClient: func(t *testing.T) dy.DynamoClient {
+				m := mocks.NewDynamoClient(t)
+				m.On("BatchGetItem", mock.Anything, mock.Anything).Return(&dynamodb.BatchGetItemOutput{
+					Responses: map[string][]map[string]types.AttributeValue{
+						dbConfig.TableInfo.TableName: {
+							map[string]types.AttributeValue{
+								"id":      &types.AttributeValueMemberS{Value: "123"},
+								"enabled": &types.AttributeValueMemberBOOL{Value: true},
 							},
 						},
 					},
-					UnprocessedKeys: map[string]*dynamodb.KeysAndAttributes{
-						validDbConfig.TableInfo.TableName: {
-							Keys: []map[string]*dynamodb.AttributeValue{
+					UnprocessedKeys: map[string]types.KeysAndAttributes{
+						dbConfig.TableInfo.TableName: {
+							Keys: []map[string]types.AttributeValue{
 								{
-									"id": {S: aws.String("124")},
+									"id": &types.AttributeValueMemberS{Value: "124"},
 								},
 							},
 						},
 					},
 				}, nil)
 
-				return &m
-			}(),
-			keys: []dynamo.DynamoPrimaryKey{
+				return m
+			},
+			keys: []dy.DynamoPrimaryKey{
 				{
-					PartitionKey: dynamo.DynamoAttribute{
+					PartitionKey: dy.DynamoAttribute{
 						KeyName: "id",
-						KeyType: dynamo.String,
+						KeyType: dy.String,
 						Value:   "123",
 					},
 				},
@@ -720,36 +608,49 @@ func TestGetItems(t *testing.T) {
 			remainingItemsCount: 1,
 		},
 		{
-			name:       "with empty ids",
-			dbConfig:   validDbConfig,
-			dbClient:   &dbWithNoError,
-			keys:       make([]dynamo.DynamoPrimaryKey, 0),
+			name:     "with empty ids",
+			dbConfig: dbConfig,
+			dbClient: func(t *testing.T) dy.DynamoClient {
+				return mocks.NewDynamoClient(t)
+			},
+			keys:       make([]dy.DynamoPrimaryKey, 0),
 			itemsCount: 0,
 		},
 		{
-			name:                "with db error",
-			dbConfig:            validDbConfig,
-			dbClient:            &dbWithError,
+			name:     "with db error",
+			dbConfig: dbConfig,
+			dbClient: func(t *testing.T) dy.DynamoClient {
+				m := mocks.NewDynamoClient(t)
+				m.On("BatchGetItem", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("error"))
+
+				return m
+			},
 			keys:                validKeys,
 			remainingItemsCount: 1,
 			hasError:            true,
 		},
 		{
-			name:       "with not found item",
-			dbConfig:   validDbConfig,
-			dbClient:   &dbWithNotFoundItem,
+			name:     "with not found item",
+			dbConfig: dbConfig,
+			dbClient: func(t *testing.T) dy.DynamoClient {
+				m := mocks.NewDynamoClient(t)
+				m.On("BatchGetItem", mock.Anything, mock.Anything).Return(&dynamodb.BatchGetItemOutput{}, nil)
+				return m
+			},
 			keys:       validKeys,
 			itemsCount: 0,
 		},
 		{
 			name:     "with invalid key",
-			dbConfig: validDbConfig,
-			dbClient: &dbWithNoError,
-			keys: []dynamo.DynamoPrimaryKey{
+			dbConfig: dbConfig,
+			dbClient: func(t *testing.T) dy.DynamoClient {
+				return mocks.NewDynamoClient(t)
+			},
+			keys: []dy.DynamoPrimaryKey{
 				{
-					PartitionKey: dynamo.DynamoAttribute{
+					PartitionKey: dy.DynamoAttribute{
 						KeyName: "group_id",
-						KeyType: dynamo.DBKeyType(99), // invalid key type
+						KeyType: dy.DBKeyType(99), // invalid key type
 						Value:   "123",
 					},
 				},
@@ -759,127 +660,103 @@ func TestGetItems(t *testing.T) {
 		},
 		{
 			name:     "with wrong response structure",
-			dbConfig: validDbConfig,
-			dbClient: func() dynamo.DBClient {
-				m := mocks.DBClient{}
-				m.On("BatchGetItemWithContext", mock.Anything, mock.Anything).Return(&dynamodb.BatchGetItemOutput{
-					Responses: map[string][]map[string]*dynamodb.AttributeValue{
-						validDbConfig.TableInfo.TableName: {
-							map[string]*dynamodb.AttributeValue{
-								"userID":    {S: aws.String("123")},
-								"user_name": {S: aws.String("name")},
+			dbConfig: dbConfig,
+			dbClient: func(t *testing.T) dy.DynamoClient {
+				m := mocks.NewDynamoClient(t)
+				m.On("BatchGetItem", mock.Anything, mock.Anything).Return(&dynamodb.BatchGetItemOutput{
+					Responses: map[string][]map[string]types.AttributeValue{
+						dbConfig.TableInfo.TableName: {
+							map[string]types.AttributeValue{
+								"userID":    &types.AttributeValueMemberS{Value: "123"},
+								"user_name": &types.AttributeValueMemberS{Value: "name"},
 							},
 						},
 					},
 				}, nil)
 
-				return &m
-			}(),
+				return m
+			},
 			keys:                validKeys,
 			remainingItemsCount: 1,
 			hasError:            true,
 		},
 		{
 			name:     "with remaining items",
-			dbConfig: validDbConfig,
-			dbClient: func() dynamo.DBClient {
-				m := mocks.DBClient{}
-				m.On("BatchGetItemWithContext", mock.Anything, mock.Anything).Return(&dynamodb.BatchGetItemOutput{
-					Responses: map[string][]map[string]*dynamodb.AttributeValue{
-						validDbConfig.TableInfo.TableName: {
-							map[string]*dynamodb.AttributeValue{
-								"id":         {S: aws.String("123")},
-								"group_id":   {N: aws.String("1234")},
-								"enabled":    {BOOL: aws.Bool(true)},
-								"first_name": {S: aws.String("name")},
-								"last_name":  {S: aws.String("l_name")},
-							},
-						},
+			dbConfig: dbConfig,
+			dbClient: func(t *testing.T) dy.DynamoClient {
+				m := mocks.NewDynamoClient(t)
+				m.On("BatchGetItem", mock.Anything, mock.Anything).Return(&dynamodb.BatchGetItemOutput{
+					Responses: map[string][]map[string]types.AttributeValue{
+						dbConfig.TableInfo.TableName: getItemAttributeValuesTestData(),
 					},
-					UnprocessedKeys: map[string]*dynamodb.KeysAndAttributes{
-						validDbConfig.TableInfo.TableName: {
-							Keys: []map[string]*dynamodb.AttributeValue{
+					UnprocessedKeys: map[string]types.KeysAndAttributes{
+						dbConfig.TableInfo.TableName: {
+							Keys: []map[string]types.AttributeValue{
 								{
-									"id":       {S: aws.String("124")},
-									"group_id": {N: aws.String("1245")},
+									"id":      &types.AttributeValueMemberS{Value: "124"},
+									"groupID": &types.AttributeValueMemberN{Value: "1245"},
 								},
 								{
-									"id":       {S: aws.String("124")},
-									"group_id": {N: aws.String("1246")},
+									"id":      &types.AttributeValueMemberS{Value: "124"},
+									"groupID": &types.AttributeValueMemberN{Value: "1246"},
 								},
 							},
 						},
 					},
 				}, nil)
 
-				return &m
-			}(),
+				return m
+			},
 			keys:                validKeys,
 			itemsCount:          1,
 			remainingItemsCount: 2,
 		},
 		{
 			name:     "with remaining items but empty key (for coverage only)",
-			dbConfig: validDbConfig,
-			dbClient: func() dynamo.DBClient {
-				m := mocks.DBClient{}
-				m.On("BatchGetItemWithContext", mock.Anything, mock.Anything).Return(&dynamodb.BatchGetItemOutput{
-					Responses: map[string][]map[string]*dynamodb.AttributeValue{
-						validDbConfig.TableInfo.TableName: {
-							map[string]*dynamodb.AttributeValue{
-								"id":         {S: aws.String("123")},
-								"group_id":   {N: aws.String("1234")},
-								"enabled":    {BOOL: aws.Bool(true)},
-								"first_name": {S: aws.String("name")},
-								"last_name":  {S: aws.String("l_name")},
-							},
-						},
+			dbConfig: dbConfig,
+			dbClient: func(t *testing.T) dy.DynamoClient {
+				m := mocks.NewDynamoClient(t)
+				m.On("BatchGetItem", mock.Anything, mock.Anything).Return(&dynamodb.BatchGetItemOutput{
+					Responses: map[string][]map[string]types.AttributeValue{
+						dbConfig.TableInfo.TableName: getItemAttributeValuesTestData(),
 					},
-					UnprocessedKeys: map[string]*dynamodb.KeysAndAttributes{
-						validDbConfig.TableInfo.TableName: {
-							Keys: []map[string]*dynamodb.AttributeValue{
+					UnprocessedKeys: map[string]types.KeysAndAttributes{
+						dbConfig.TableInfo.TableName: {
+							Keys: []map[string]types.AttributeValue{
 								{},
 							},
 						},
 					},
 				}, nil)
 
-				return &m
-			}(),
+				return m
+			},
 			keys:                validKeys,
 			itemsCount:          1,
 			remainingItemsCount: 0,
 		},
 		{
 			name:     "with invalid remaining items",
-			dbConfig: validDbConfig,
-			dbClient: func() dynamo.DBClient {
-				m := mocks.DBClient{}
-				m.On("BatchGetItemWithContext", mock.Anything, mock.Anything).Return(&dynamodb.BatchGetItemOutput{
-					Responses: map[string][]map[string]*dynamodb.AttributeValue{
-						validDbConfig.TableInfo.TableName: {
-							map[string]*dynamodb.AttributeValue{
-								"id":         {S: aws.String("123")},
-								"group_id":   {N: aws.String("1234")},
-								"enabled":    {BOOL: aws.Bool(true)},
-								"first_name": {S: aws.String("name")},
-								"last_name":  {S: aws.String("l_name")},
-							},
-						},
+			dbConfig: dbConfig,
+			dbClient: func(t *testing.T) dy.DynamoClient {
+				m := mocks.NewDynamoClient(t)
+				m.On("BatchGetItem", mock.Anything, mock.Anything).Return(&dynamodb.BatchGetItemOutput{
+					Responses: map[string][]map[string]types.AttributeValue{
+						dbConfig.TableInfo.TableName: getItemAttributeValuesTestData(),
 					},
-					UnprocessedKeys: map[string]*dynamodb.KeysAndAttributes{
-						validDbConfig.TableInfo.TableName: {
-							Keys: []map[string]*dynamodb.AttributeValue{
+					UnprocessedKeys: map[string]types.KeysAndAttributes{
+						dbConfig.TableInfo.TableName: {
+							Keys: []map[string]types.AttributeValue{
 								{
-									"username": {S: aws.String("124")},
+									"username": &types.AttributeValueMemberS{Value: "124"},
 								},
 							},
 						},
 					},
 				}, nil)
 
-				return &m
-			}(),
+				return m
+			},
 			keys:                validKeys,
 			itemsCount:          0,
 			remainingItemsCount: 1,
@@ -887,84 +764,58 @@ func TestGetItems(t *testing.T) {
 		},
 		{
 			name:     "with nil UnprocessedKeys",
-			dbConfig: validDbConfig,
-			dbClient: func() dynamo.DBClient {
-				m := mocks.DBClient{}
-				m.On("BatchGetItemWithContext", mock.Anything, mock.Anything).Return(&dynamodb.BatchGetItemOutput{
-					Responses: map[string][]map[string]*dynamodb.AttributeValue{
-						validDbConfig.TableInfo.TableName: {
-							map[string]*dynamodb.AttributeValue{
-								"id":         {S: aws.String("123")},
-								"group_id":   {N: aws.String("1234")},
-								"enabled":    {BOOL: aws.Bool(true)},
-								"first_name": {S: aws.String("name")},
-								"last_name":  {S: aws.String("l_name")},
-							},
-						},
+			dbConfig: dbConfig,
+			dbClient: func(t *testing.T) dy.DynamoClient {
+				m := mocks.NewDynamoClient(t)
+				m.On("BatchGetItem", mock.Anything, mock.Anything).Return(&dynamodb.BatchGetItemOutput{
+					Responses: map[string][]map[string]types.AttributeValue{
+						dbConfig.TableInfo.TableName: getItemAttributeValuesTestData(),
 					},
 					UnprocessedKeys: nil,
 				}, nil)
 
-				return &m
-			}(),
+				return m
+			},
 			keys:                validKeys,
 			itemsCount:          1,
 			remainingItemsCount: 0,
 		},
 		{
 			name:     "with nil UnprocessedKeys for the selected table",
-			dbConfig: validDbConfig,
-			dbClient: func() dynamo.DBClient {
-				m := mocks.DBClient{}
-				m.On("BatchGetItemWithContext", mock.Anything, mock.Anything).Return(&dynamodb.BatchGetItemOutput{
-					Responses: map[string][]map[string]*dynamodb.AttributeValue{
-						validDbConfig.TableInfo.TableName: {
-							map[string]*dynamodb.AttributeValue{
-								"id":         {S: aws.String("123")},
-								"group_id":   {N: aws.String("1234")},
-								"enabled":    {BOOL: aws.Bool(true)},
-								"first_name": {S: aws.String("name")},
-								"last_name":  {S: aws.String("l_name")},
-							},
-						},
+			dbConfig: dbConfig,
+			dbClient: func(t *testing.T) dy.DynamoClient {
+				m := mocks.NewDynamoClient(t)
+				m.On("BatchGetItem", mock.Anything, mock.Anything).Return(&dynamodb.BatchGetItemOutput{
+					Responses: map[string][]map[string]types.AttributeValue{
+						dbConfig.TableInfo.TableName: getItemAttributeValuesTestData(),
 					},
-					UnprocessedKeys: map[string]*dynamodb.KeysAndAttributes{
-						validDbConfig.TableInfo.TableName: nil,
-					},
+					UnprocessedKeys: nil,
 				}, nil)
 
-				return &m
-			}(),
+				return m
+			},
 			keys:                validKeys,
 			itemsCount:          1,
 			remainingItemsCount: 0,
 		},
 		{
 			name:     "with empty UnprocessedKeys for the selected table",
-			dbConfig: validDbConfig,
-			dbClient: func() dynamo.DBClient {
-				m := mocks.DBClient{}
-				m.On("BatchGetItemWithContext", mock.Anything, mock.Anything).Return(&dynamodb.BatchGetItemOutput{
-					Responses: map[string][]map[string]*dynamodb.AttributeValue{
-						validDbConfig.TableInfo.TableName: {
-							map[string]*dynamodb.AttributeValue{
-								"id":         {S: aws.String("123")},
-								"group_id":   {N: aws.String("1234")},
-								"enabled":    {BOOL: aws.Bool(true)},
-								"first_name": {S: aws.String("name")},
-								"last_name":  {S: aws.String("l_name")},
-							},
-						},
+			dbConfig: dbConfig,
+			dbClient: func(t *testing.T) dy.DynamoClient {
+				m := mocks.NewDynamoClient(t)
+				m.On("BatchGetItem", mock.Anything, mock.Anything).Return(&dynamodb.BatchGetItemOutput{
+					Responses: map[string][]map[string]types.AttributeValue{
+						dbConfig.TableInfo.TableName: getItemAttributeValuesTestData(),
 					},
-					UnprocessedKeys: map[string]*dynamodb.KeysAndAttributes{
-						validDbConfig.TableInfo.TableName: {
-							Keys: []map[string]*dynamodb.AttributeValue{},
+					UnprocessedKeys: map[string]types.KeysAndAttributes{
+						dbConfig.TableInfo.TableName: {
+							Keys: []map[string]types.AttributeValue{},
 						},
 					},
 				}, nil)
 
-				return &m
-			}(),
+				return m
+			},
 			keys:                validKeys,
 			itemsCount:          1,
 			remainingItemsCount: 0,
@@ -974,12 +825,31 @@ func TestGetItems(t *testing.T) {
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			db := dynamo.NewDynamoWrapper[entity](tc.dbClient, tc.dbConfig)
+			db := dy.NewClient[entity](tc.dbClient(t), tc.dbConfig)
 
 			items, remaining, err := db.GetItems(context.Background(), tc.keys)
 			assert.Equal(t, !tc.hasError, err == nil, err)
 			assert.Equal(t, tc.itemsCount, len(items))
 			assert.Equal(t, tc.remainingItemsCount, len(remaining))
 		})
+	}
+}
+
+func getItemAttributeValuesTestData() []map[string]types.AttributeValue {
+	return []map[string]types.AttributeValue{
+		{
+			"id":        &types.AttributeValueMemberS{Value: "123"},
+			"groupID":   &types.AttributeValueMemberN{Value: "1234"},
+			"enabled":   &types.AttributeValueMemberBOOL{Value: true},
+			"firstName": &types.AttributeValueMemberS{Value: "name"},
+			"lastName":  &types.AttributeValueMemberS{Value: "l_name"},
+		},
+	}
+}
+
+func getLastEvaluatedKeysTestData() map[string]types.AttributeValue {
+	return map[string]types.AttributeValue{
+		"id":      &types.AttributeValueMemberS{Value: "123"},
+		"groupID": &types.AttributeValueMemberN{Value: "1234"},
 	}
 }

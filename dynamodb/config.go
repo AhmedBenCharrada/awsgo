@@ -1,4 +1,4 @@
-package dynamodb
+package dy
 
 // DBIndexName custom type for dynamo DB index name
 type DBIndexName string

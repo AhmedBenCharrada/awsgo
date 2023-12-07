@@ -7,7 +7,7 @@ import (
 
 	"github.com/AhmedBenCharrada/awsgo/mocks"
 
-	dy "github.com/AhmedBenCharrada/awsgo/dynamodb/v2"
+	dy "github.com/AhmedBenCharrada/awsgo/dynamodb"
 
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go/aws"

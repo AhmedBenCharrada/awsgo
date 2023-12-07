@@ -1,16 +1,17 @@
-package dynamodb
+package dy
 
 import (
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
-// DynamoAttr ...
+// DynamoAttr ..
 type DynamoAttr struct {
 	Name    string
 	KeyType DBKeyType
-	Value   *dynamodb.AttributeValue
+	Value   types.AttributeValue
 }
 
 // IsEmpty checks whether a dynamo-value is nit or empty.
@@ -20,11 +21,16 @@ func (d *DynamoAttr) IsEmpty() bool {
 	}
 
 	switch d.KeyType {
-	case String, Number:
-		return d.Value.S == nil || *d.Value.S == ""
+	case String:
+		s, ok := d.Value.(*types.AttributeValueMemberS)
+		return !ok || s.Value == ""
+	case Number:
+		s, ok := d.Value.(*types.AttributeValueMemberN)
+		b := !ok || s.Value == ""
+		return b
 	}
 
-	return d.Value.S == nil
+	return false
 }
 
 // DynamoExpressionBuilder dynamo expression builder.
@@ -115,7 +121,7 @@ func (b *DynamoExpressionBuilder) BuildGetItemInput() (*dynamodb.GetItemInput, e
 
 // BuildBatchGetItemInput builds batch get item input
 func (b *DynamoExpressionBuilder) BuildBatchGetItemInput(keys ...DynamoPrimaryKey) (*dynamodb.BatchGetItemInput, error) {
-	queries := make([]map[string]*dynamodb.AttributeValue, 0, len(keys))
+	queries := make([]map[string]types.AttributeValue, 0, len(keys))
 
 	for _, key := range keys {
 		// prepare the partition and the sort keys
@@ -131,7 +137,7 @@ func (b *DynamoExpressionBuilder) BuildBatchGetItemInput(keys ...DynamoPrimaryKe
 
 	// build batch get item input
 	return &dynamodb.BatchGetItemInput{
-		RequestItems: map[string]*dynamodb.KeysAndAttributes{
+		RequestItems: map[string]types.KeysAndAttributes{
 			b.tableName: {
 				Keys: queries,
 			},
@@ -140,15 +146,15 @@ func (b *DynamoExpressionBuilder) BuildBatchGetItemInput(keys ...DynamoPrimaryKe
 }
 
 // BuildScanInput builds the dynamo scan input.
-func (b *DynamoExpressionBuilder) BuildScanInput(index *string, filter *Criteria, lastEvaluatedKey *DynamoPrimaryKey, limit int64) (*dynamodb.ScanInput, error) {
+func (b *DynamoExpressionBuilder) BuildScanInput(index *string, filter *Criteria, lastEvaluatedKey *DynamoPrimaryKey, limit int32) (*dynamodb.ScanInput, error) {
 	startKey, err := getLastEvaluatedKey(lastEvaluatedKey)
 	if err != nil {
 		return nil, err
 	}
 
-	var size *int64
+	var size *int32
 	if limit > 0 {
-		size = aws.Int64(limit)
+		size = aws.Int32(limit)
 	}
 
 	if filter == nil {
@@ -177,15 +183,15 @@ func (b *DynamoExpressionBuilder) BuildScanInput(index *string, filter *Criteria
 }
 
 // BuildQueryInput builds dynamo query input.
-func (b *DynamoExpressionBuilder) BuildQueryInput(index *string, partitionKey DynamoAttribute, filter *Criteria, lastEvaluatedKey *DynamoPrimaryKey, limit int64) (*dynamodb.QueryInput, error) {
+func (b *DynamoExpressionBuilder) BuildQueryInput(index *string, partitionKey DynamoAttribute, filter *Criteria, lastEvaluatedKey *DynamoPrimaryKey, limit int32) (*dynamodb.QueryInput, error) {
 	startKey, err := getLastEvaluatedKey(lastEvaluatedKey)
 	if err != nil {
 		return nil, err
 	}
 
-	var size *int64
+	var size *int32
 	if limit > 0 {
-		size = aws.Int64(limit)
+		size = aws.Int32(limit)
 	}
 
 	builder := expression.NewBuilder()
@@ -224,8 +230,8 @@ func (b *DynamoExpressionBuilder) validateKeys() error {
 	return nil
 }
 
-func getLastEvaluatedKey(lastEvaluatedKey *DynamoPrimaryKey) (map[string]*dynamodb.AttributeValue, error) {
-	var startKey map[string]*dynamodb.AttributeValue
+func getLastEvaluatedKey(lastEvaluatedKey *DynamoPrimaryKey) (map[string]types.AttributeValue, error) {
+	var startKey map[string]types.AttributeValue
 	if lastEvaluatedKey == nil {
 		return startKey, nil
 	}
@@ -240,8 +246,8 @@ func getLastEvaluatedKey(lastEvaluatedKey *DynamoPrimaryKey) (map[string]*dynamo
 	return startKey, nil
 }
 
-func prepareDynamoKeys(partKey DynamoAttr, sortKey *DynamoAttr) map[string]*dynamodb.AttributeValue {
-	keys := map[string]*dynamodb.AttributeValue{
+func prepareDynamoKeys(partKey DynamoAttr, sortKey *DynamoAttr) map[string]types.AttributeValue {
+	keys := map[string]types.AttributeValue{
 		partKey.Name: partKey.Value,
 	}
 

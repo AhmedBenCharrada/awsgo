@@ -11,7 +11,6 @@ import (
 )
 
 func (d *db[T]) Create(ctx context.Context, entity T) (DynamoPrimaryKey, error) {
-	// dbMap, _ := entity.Marshal()
 	dbMap, err := attributevalue.Marshal(entity)
 	if err != nil {
 		return DynamoPrimaryKey{}, err

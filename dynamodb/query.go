@@ -66,45 +66,6 @@ func (d *db[T]) Find(ctx context.Context, req Request) (Page[T], error) {
 	}, nil
 }
 
-func find(ctx context.Context, client DynamoClient, table string, req Request) (*findOutput, error) {
-	cb := mergeConditions(req.Conditions)
-
-	// initialize the expression builder
-	builder := NewExpressionBuilder(table)
-
-	if req.PartitionKey == nil {
-		in, err := builder.BuildScanInput(req.Index, cb, req.LastEvaluatedKey, int32(req.Size))
-		if err != nil {
-			return nil, err
-		}
-
-		out, err := client.Scan(ctx, in)
-		if err != nil {
-			return nil, err
-		}
-
-		return &findOutput{
-			Items:            out.Items,
-			LastEvaluatedKey: out.LastEvaluatedKey,
-		}, err
-	}
-
-	in, err := builder.BuildQueryInput(req.Index, *req.PartitionKey, cb, req.LastEvaluatedKey, int32(req.Size))
-	if err != nil {
-		return nil, err
-	}
-
-	out, err := client.Query(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-
-	return &findOutput{
-		Items:            out.Items,
-		LastEvaluatedKey: out.LastEvaluatedKey,
-	}, err
-}
-
 func (d *db[T]) GetItem(ctx context.Context, primaryKey DynamoPrimaryKey) (*T, error) {
 	// prepare the partition and the sort keys
 	partKey, sortKey, err := preparePartSortKey(primaryKey)
@@ -166,6 +127,45 @@ func (d *db[T]) GetItems(ctx context.Context, ids []DynamoPrimaryKey) ([]T, []Dy
 	}
 
 	return res, unprocessedKeys, nil
+}
+
+func find(ctx context.Context, client DynamoClient, table string, req Request) (*findOutput, error) {
+	cb := mergeConditions(req.Conditions)
+
+	// initialize the expression builder
+	builder := NewExpressionBuilder(table)
+
+	if req.PartitionKey == nil {
+		in, err := builder.BuildScanInput(req.Index, cb, req.LastEvaluatedKey, int32(req.Size))
+		if err != nil {
+			return nil, err
+		}
+
+		out, err := client.Scan(ctx, in)
+		if err != nil {
+			return nil, err
+		}
+
+		return &findOutput{
+			Items:            out.Items,
+			LastEvaluatedKey: out.LastEvaluatedKey,
+		}, err
+	}
+
+	in, err := builder.BuildQueryInput(req.Index, *req.PartitionKey, cb, req.LastEvaluatedKey, int32(req.Size))
+	if err != nil {
+		return nil, err
+	}
+
+	out, err := client.Query(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+
+	return &findOutput{
+		Items:            out.Items,
+		LastEvaluatedKey: out.LastEvaluatedKey,
+	}, err
 }
 
 func (d *db[T]) load(ctx context.Context, wg *sync.WaitGroup, ch chan<- resp[T], ids ...DynamoPrimaryKey) {

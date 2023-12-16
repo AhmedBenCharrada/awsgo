@@ -156,6 +156,12 @@ func TestDynamodb_Create(t *testing.T) {
 	}
 }
 
+func TestDynamodb_Create_with_invalid_entity_type(t *testing.T) {
+	db := dy.NewClient[wrongEntity](mocks.NewDynamoClient(t), dbConfig)
+	_, err := db.Create(context.Background(), wrongEntity("test"))
+	assert.Error(t, err)
+}
+
 func TestUpdate(t *testing.T) {
 	dbWithNoError := func(t *testing.T) dy.DynamoClient {
 		m := mocks.NewDynamoClient(t)

@@ -30,7 +30,7 @@ func (d *DynamoAttr) IsEmpty() bool {
 		return b
 	}
 
-	return false
+	return true
 }
 
 // DynamoExpressionBuilder dynamo expression builder.

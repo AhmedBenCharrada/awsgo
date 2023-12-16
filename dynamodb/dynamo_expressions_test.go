@@ -7,6 +7,29 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func Test_DynamoAttr_IsEmpty(t *testing.T) {
+	a := DynamoAttr{Name: "Test", KeyType: DBKeyType(99), Value: &types.AttributeValueMemberS{Value: "test"}}
+	assert.True(t, a.IsEmpty())
+
+	a = DynamoAttr{Name: "Test", KeyType: String, Value: &types.AttributeValueMemberS{Value: "test"}}
+	assert.False(t, a.IsEmpty())
+
+	a = DynamoAttr{Name: "Test", KeyType: String, Value: &types.AttributeValueMemberS{Value: ""}}
+	assert.True(t, a.IsEmpty())
+
+	a = DynamoAttr{Name: "Test", KeyType: String, Value: nil}
+	assert.True(t, a.IsEmpty())
+
+	a = DynamoAttr{Name: "Test", KeyType: Number, Value: &types.AttributeValueMemberN{Value: "55"}}
+	assert.False(t, a.IsEmpty())
+
+	a = DynamoAttr{Name: "Test", KeyType: Number, Value: &types.AttributeValueMemberN{Value: ""}}
+	assert.True(t, a.IsEmpty())
+
+	a = DynamoAttr{Name: "Test", KeyType: Number, Value: nil}
+	assert.True(t, a.IsEmpty())
+}
+
 func TestNewDynamoUpdateBuildUpdateItemInput(t *testing.T) {
 	t.Run("successfully", func(t *testing.T) {
 		builder := NewExpressionBuilder("table").WithPartitionKey(DynamoAttr{

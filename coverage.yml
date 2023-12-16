@@ -1,3 +1,5 @@
+ignore:
+  - "examples"
 coverage:
   range: 50...75
   round: down
@@ -5,4 +7,4 @@ coverage:
 
 codecov:
   bot: "codecov-agent"
-  require_ci_to_pass: yes
+  require_ci_to_pass: true

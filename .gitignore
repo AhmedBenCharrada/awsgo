@@ -1,2 +1,5 @@
 # test coverage output files
 *.out
+**/.volumes
+.scannerwork
+sonar-scanner.properties

@@ -2,7 +2,7 @@ package dy
 
 import "github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 
-// Operator ..
+// Operator the conditional operator. Used to build the conditional expression for read/write operations.
 type Operator int
 
 const (

@@ -37,8 +37,8 @@ func (u User) IsEmpty() bool {
 	return len(u.ID) == 0 || len(u.Name) == 0
 }
 
-// ExampleDBWrapper demonstrates how to use the dynamodb wrapper.
-func ExampleDBWrapper() {
+// demonstrates how to use the dynamodb wrapper.
+func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	// Using the default configuration.

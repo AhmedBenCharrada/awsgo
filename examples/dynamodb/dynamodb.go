@@ -18,8 +18,8 @@ var conf = dy.DBConfig{
 		TableName: "User",
 		PrimaryKey: dy.DBPrimaryKeyNames{
 			PartitionKey: dy.DynamoKeyMetadata{
-				Name:    "ID",
-				KeyType: dy.String,
+				Name: "ID",
+				Type: dy.String,
 			},
 		},
 	},
@@ -37,7 +37,8 @@ func (u User) IsEmpty() bool {
 	return len(u.ID) == 0 || len(u.Name) == 0
 }
 
-func main() {
+// ExampleDBWrapper demonstrates how to use the dynamodb wrapper.
+func ExampleDBWrapper() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	// Using the default configuration.

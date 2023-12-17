@@ -19,12 +19,12 @@ var dbConfig = dy.DBConfig{
 		TableName: "tableName",
 		PrimaryKey: dy.DBPrimaryKeyNames{
 			PartitionKey: dy.DynamoKeyMetadata{
-				Name:    "groupID",
-				KeyType: dy.Number,
+				Name: "groupID",
+				Type: dy.Number,
 			},
 			SortKey: &dy.DynamoKeyMetadata{
-				Name:    "id",
-				KeyType: dy.String,
+				Name: "id",
+				Type: dy.String,
 			},
 		},
 	},
@@ -66,12 +66,12 @@ func TestDynamodb_Find_WithScan(t *testing.T) {
 				LastEvaluatedKey: &dy.DynamoPrimaryKey{
 					PartitionKey: dy.DynamoAttribute{
 						KeyName: "id",
-						KeyType: dy.String,
+						Type:    dy.String,
 						Value:   "123",
 					},
 					SortKey: &dy.DynamoAttribute{
 						KeyName: "groupID",
-						KeyType: dy.Number,
+						Type:    dy.Number,
 						Value:   1234,
 					},
 				},
@@ -206,7 +206,7 @@ func TestDynamodb_WithQuery(t *testing.T) {
 		Size: 3,
 		PartitionKey: &dy.DynamoAttribute{
 			KeyName: "groupID",
-			KeyType: dy.String,
+			Type:    dy.String,
 			Value:   "123",
 		},
 	}
@@ -255,7 +255,7 @@ func TestDynamodb_WithQuery(t *testing.T) {
 				Size: 0,
 				PartitionKey: &dy.DynamoAttribute{
 					KeyName: "groupID",
-					KeyType: dy.Number,
+					Type:    dy.Number,
 					Value:   "123",
 				},
 			},
@@ -281,7 +281,7 @@ func TestDynamodb_WithQuery(t *testing.T) {
 				Size: validReq.Size,
 				PartitionKey: &dy.DynamoAttribute{
 					KeyName: "groupID",
-					KeyType: dy.Number,
+					Type:    dy.Number,
 					Value:   "123",
 				},
 				LastEvaluatedKey: validReq.LastEvaluatedKey,
@@ -297,7 +297,7 @@ func TestDynamodb_WithQuery(t *testing.T) {
 				Size: validReq.Size,
 				PartitionKey: &dy.DynamoAttribute{
 					KeyName: "groupID",
-					KeyType: dy.Number,
+					Type:    dy.Number,
 					Value:   "123",
 				},
 				LastEvaluatedKey: validReq.LastEvaluatedKey,
@@ -314,7 +314,7 @@ func TestDynamodb_WithQuery(t *testing.T) {
 				Size: validReq.Size,
 				PartitionKey: &dy.DynamoAttribute{
 					KeyName: "groupID",
-					KeyType: dy.Number,
+					Type:    dy.Number,
 					Value:   "123",
 				},
 				LastEvaluatedKey: validReq.LastEvaluatedKey,
@@ -407,12 +407,12 @@ func TestDynamodb_Get(t *testing.T) {
 	validKeys := dy.DynamoPrimaryKey{
 		PartitionKey: dy.DynamoAttribute{
 			KeyName: "groupID",
-			KeyType: dy.Number,
+			Type:    dy.Number,
 			Value:   "123",
 		},
 		SortKey: &dy.DynamoAttribute{
 			KeyName: "id",
-			KeyType: dy.String,
+			Type:    dy.String,
 			Value:   "12345",
 		},
 	}
@@ -434,7 +434,7 @@ func TestDynamodb_Get(t *testing.T) {
 			keys: dy.DynamoPrimaryKey{
 				PartitionKey: dy.DynamoAttribute{
 					KeyName: "groupID",
-					KeyType: dy.String,
+					Type:    dy.String,
 					Value:   "123",
 				},
 			},
@@ -467,7 +467,7 @@ func TestDynamodb_Get(t *testing.T) {
 			keys: dy.DynamoPrimaryKey{
 				PartitionKey: dy.DynamoAttribute{
 					KeyName: "groupID",
-					KeyType: dy.DBKeyType(99), // invalid key type
+					Type:    dy.DBKeyType(99), // invalid key type
 					Value:   "123",
 				},
 			},
@@ -481,12 +481,12 @@ func TestDynamodb_Get(t *testing.T) {
 			keys: dy.DynamoPrimaryKey{
 				PartitionKey: dy.DynamoAttribute{
 					KeyName: "groupID",
-					KeyType: dy.Number,
+					Type:    dy.Number,
 					Value:   "",
 				},
 				SortKey: &dy.DynamoAttribute{
 					KeyName: "id",
-					KeyType: dy.String,
+					Type:    dy.String,
 					Value:   "",
 				},
 			},
@@ -531,12 +531,12 @@ func TestDynamodb_GetItems(t *testing.T) {
 		{
 			PartitionKey: dy.DynamoAttribute{
 				KeyName: "groupID",
-				KeyType: dy.Number,
+				Type:    dy.Number,
 				Value:   "123",
 			},
 			SortKey: &dy.DynamoAttribute{
 				KeyName: "id",
-				KeyType: dy.String,
+				Type:    dy.String,
 				Value:   "12345",
 			},
 		},
@@ -565,8 +565,8 @@ func TestDynamodb_GetItems(t *testing.T) {
 					TableName: "tableName",
 					PrimaryKey: dy.DBPrimaryKeyNames{
 						PartitionKey: dy.DynamoKeyMetadata{
-							Name:    "id",
-							KeyType: dy.String,
+							Name: "id",
+							Type: dy.String,
 						},
 					},
 				},
@@ -599,7 +599,7 @@ func TestDynamodb_GetItems(t *testing.T) {
 				{
 					PartitionKey: dy.DynamoAttribute{
 						KeyName: "id",
-						KeyType: dy.String,
+						Type:    dy.String,
 						Value:   "123",
 					},
 				},
@@ -650,7 +650,7 @@ func TestDynamodb_GetItems(t *testing.T) {
 				{
 					PartitionKey: dy.DynamoAttribute{
 						KeyName: "group_id",
-						KeyType: dy.DBKeyType(99), // invalid key type
+						Type:    dy.DBKeyType(99), // invalid key type
 						Value:   "123",
 					},
 				},

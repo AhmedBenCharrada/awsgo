@@ -8,38 +8,38 @@ import (
 )
 
 func Test_DynamoAttr_IsEmpty(t *testing.T) {
-	a := DynamoAttr{Name: "Test", KeyType: DBKeyType(99), Value: &types.AttributeValueMemberS{Value: "test"}}
+	a := DynamoAttr{Name: "Test", Type: DBKeyType(99), Value: &types.AttributeValueMemberS{Value: "test"}}
 	assert.True(t, a.IsEmpty())
 
-	a = DynamoAttr{Name: "Test", KeyType: String, Value: &types.AttributeValueMemberS{Value: "test"}}
+	a = DynamoAttr{Name: "Test", Type: String, Value: &types.AttributeValueMemberS{Value: "test"}}
 	assert.False(t, a.IsEmpty())
 
-	a = DynamoAttr{Name: "Test", KeyType: String, Value: &types.AttributeValueMemberS{Value: ""}}
+	a = DynamoAttr{Name: "Test", Type: String, Value: &types.AttributeValueMemberS{Value: ""}}
 	assert.True(t, a.IsEmpty())
 
-	a = DynamoAttr{Name: "Test", KeyType: String, Value: nil}
+	a = DynamoAttr{Name: "Test", Type: String, Value: nil}
 	assert.True(t, a.IsEmpty())
 
-	a = DynamoAttr{Name: "Test", KeyType: Number, Value: &types.AttributeValueMemberN{Value: "55"}}
+	a = DynamoAttr{Name: "Test", Type: Number, Value: &types.AttributeValueMemberN{Value: "55"}}
 	assert.False(t, a.IsEmpty())
 
-	a = DynamoAttr{Name: "Test", KeyType: Number, Value: &types.AttributeValueMemberN{Value: ""}}
+	a = DynamoAttr{Name: "Test", Type: Number, Value: &types.AttributeValueMemberN{Value: ""}}
 	assert.True(t, a.IsEmpty())
 
-	a = DynamoAttr{Name: "Test", KeyType: Number, Value: nil}
+	a = DynamoAttr{Name: "Test", Type: Number, Value: nil}
 	assert.True(t, a.IsEmpty())
 }
 
 func TestNewDynamoUpdateBuildUpdateItemInput(t *testing.T) {
 	t.Run("successfully", func(t *testing.T) {
 		builder := NewExpressionBuilder("table").WithPartitionKey(DynamoAttr{
-			Name:    "GroupID",
-			KeyType: String,
-			Value:   &types.AttributeValueMemberS{Value: "123"},
+			Name:  "GroupID",
+			Type:  String,
+			Value: &types.AttributeValueMemberS{Value: "123"},
 		}).WithSortKey(&DynamoAttr{
-			Name:    "ID",
-			KeyType: String,
-			Value:   &types.AttributeValueMemberS{Value: "123"},
+			Name:  "ID",
+			Type:  String,
+			Value: &types.AttributeValueMemberS{Value: "123"},
 		})
 
 		builder.
@@ -63,9 +63,9 @@ func TestNewDynamoUpdateBuildUpdateItemInput(t *testing.T) {
 
 	t.Run("with empty partition key", func(t *testing.T) {
 		builder := NewExpressionBuilder("table").WithPartitionKey(DynamoAttr{
-			Name:    "",
-			KeyType: String,
-			Value:   nil,
+			Name:  "",
+			Type:  String,
+			Value: nil,
 		})
 
 		builder.
@@ -78,13 +78,13 @@ func TestNewDynamoUpdateBuildUpdateItemInput(t *testing.T) {
 
 	t.Run("with empty sort key", func(t *testing.T) {
 		builder := NewExpressionBuilder("table").WithPartitionKey(DynamoAttr{
-			Name:    "GroupID",
-			KeyType: String,
-			Value:   &types.AttributeValueMemberS{Value: "123"},
+			Name:  "GroupID",
+			Type:  String,
+			Value: &types.AttributeValueMemberS{Value: "123"},
 		}).WithSortKey(&DynamoAttr{
-			Name:    "",
-			KeyType: String,
-			Value:   &types.AttributeValueMemberS{Value: ""},
+			Name:  "",
+			Type:  String,
+			Value: &types.AttributeValueMemberS{Value: ""},
 		})
 
 		builder.
@@ -97,13 +97,13 @@ func TestNewDynamoUpdateBuildUpdateItemInput(t *testing.T) {
 
 	t.Run("with empty upload data", func(t *testing.T) {
 		builder := NewExpressionBuilder("table").WithPartitionKey(DynamoAttr{
-			Name:    "GroupID",
-			KeyType: String,
-			Value:   &types.AttributeValueMemberS{Value: "123"},
+			Name:  "GroupID",
+			Type:  String,
+			Value: &types.AttributeValueMemberS{Value: "123"},
 		}).WithSortKey(&DynamoAttr{
-			Name:    "ID",
-			KeyType: String,
-			Value:   &types.AttributeValueMemberS{Value: "123"},
+			Name:  "ID",
+			Type:  String,
+			Value: &types.AttributeValueMemberS{Value: "123"},
 		})
 
 		_, err := builder.BuildUpdateItemInput()
@@ -112,13 +112,13 @@ func TestNewDynamoUpdateBuildUpdateItemInput(t *testing.T) {
 
 	t.Run("with nil partition-key", func(t *testing.T) {
 		builder := NewExpressionBuilder("table").WithPartitionKey(DynamoAttr{
-			Name:    "GroupID",
-			KeyType: String,
-			Value:   nil,
+			Name:  "GroupID",
+			Type:  String,
+			Value: nil,
 		}).WithSortKey(&DynamoAttr{
-			Name:    "ID",
-			KeyType: String,
-			Value:   &types.AttributeValueMemberS{Value: "123"},
+			Name:  "ID",
+			Type:  String,
+			Value: &types.AttributeValueMemberS{Value: "123"},
 		})
 
 		builder.
@@ -131,13 +131,13 @@ func TestNewDynamoUpdateBuildUpdateItemInput(t *testing.T) {
 
 	t.Run("with nil partition-key", func(t *testing.T) {
 		builder := NewExpressionBuilder("table").WithPartitionKey(DynamoAttr{
-			Name:    "GroupID",
-			KeyType: Boolean,
-			Value:   nil,
+			Name:  "GroupID",
+			Type:  Boolean,
+			Value: nil,
 		}).WithSortKey(&DynamoAttr{
-			Name:    "ID",
-			KeyType: String,
-			Value:   &types.AttributeValueMemberS{Value: "123"},
+			Name:  "ID",
+			Type:  String,
+			Value: &types.AttributeValueMemberS{Value: "123"},
 		})
 
 		builder.
@@ -153,13 +153,13 @@ func TestNewDynamoUpdateBuildUpdateItemInput(t *testing.T) {
 func TestNewDynamoUpdateBuildDeleteItemInput(t *testing.T) {
 	t.Run("successfully", func(t *testing.T) {
 		builder := NewExpressionBuilder("table").WithPartitionKey(DynamoAttr{
-			Name:    "GroupID",
-			KeyType: String,
-			Value:   &types.AttributeValueMemberS{Value: "123"},
+			Name:  "GroupID",
+			Type:  String,
+			Value: &types.AttributeValueMemberS{Value: "123"},
 		}).WithSortKey(&DynamoAttr{
-			Name:    "ID",
-			KeyType: String,
-			Value:   &types.AttributeValueMemberS{Value: "123"},
+			Name:  "ID",
+			Type:  String,
+			Value: &types.AttributeValueMemberS{Value: "123"},
 		})
 
 		req, err := builder.BuildDeleteItemInput()
@@ -169,9 +169,9 @@ func TestNewDynamoUpdateBuildDeleteItemInput(t *testing.T) {
 
 	t.Run("with empty partition key", func(t *testing.T) {
 		builder := NewExpressionBuilder("table").WithPartitionKey(DynamoAttr{
-			Name:    "",
-			KeyType: String,
-			Value:   nil,
+			Name:  "",
+			Type:  String,
+			Value: nil,
 		})
 
 		_, err := builder.BuildDeleteItemInput()
@@ -180,13 +180,13 @@ func TestNewDynamoUpdateBuildDeleteItemInput(t *testing.T) {
 
 	t.Run("with empty sort key", func(t *testing.T) {
 		builder := NewExpressionBuilder("table").WithPartitionKey(DynamoAttr{
-			Name:    "GroupID",
-			KeyType: String,
-			Value:   &types.AttributeValueMemberS{Value: "123"},
+			Name:  "GroupID",
+			Type:  String,
+			Value: &types.AttributeValueMemberS{Value: "123"},
 		}).WithSortKey(&DynamoAttr{
-			Name:    "",
-			KeyType: String,
-			Value:   &types.AttributeValueMemberS{Value: ""},
+			Name:  "",
+			Type:  String,
+			Value: &types.AttributeValueMemberS{Value: ""},
 		})
 
 		_, err := builder.BuildDeleteItemInput()
@@ -197,13 +197,13 @@ func TestNewDynamoUpdateBuildDeleteItemInput(t *testing.T) {
 func TestNewDynamoUpdateBuildGetItemInput(t *testing.T) {
 	t.Run("successfully", func(t *testing.T) {
 		builder := NewExpressionBuilder("table").WithPartitionKey(DynamoAttr{
-			Name:    "GroupID",
-			KeyType: String,
-			Value:   &types.AttributeValueMemberS{Value: "123"},
+			Name:  "GroupID",
+			Type:  String,
+			Value: &types.AttributeValueMemberS{Value: "123"},
 		}).WithSortKey(&DynamoAttr{
-			Name:    "ID",
-			KeyType: String,
-			Value:   &types.AttributeValueMemberS{Value: "123"},
+			Name:  "ID",
+			Type:  String,
+			Value: &types.AttributeValueMemberS{Value: "123"},
 		})
 
 		req, err := builder.BuildGetItemInput()
@@ -213,9 +213,9 @@ func TestNewDynamoUpdateBuildGetItemInput(t *testing.T) {
 
 	t.Run("with empty partition key", func(t *testing.T) {
 		builder := NewExpressionBuilder("table").WithPartitionKey(DynamoAttr{
-			Name:    "",
-			KeyType: String,
-			Value:   &types.AttributeValueMemberS{Value: ""},
+			Name:  "",
+			Type:  String,
+			Value: &types.AttributeValueMemberS{Value: ""},
 		})
 
 		_, err := builder.BuildGetItemInput()
@@ -224,13 +224,13 @@ func TestNewDynamoUpdateBuildGetItemInput(t *testing.T) {
 
 	t.Run("with empty sort key", func(t *testing.T) {
 		builder := NewExpressionBuilder("table").WithPartitionKey(DynamoAttr{
-			Name:    "GroupID",
-			KeyType: String,
-			Value:   &types.AttributeValueMemberS{Value: "123"},
+			Name:  "GroupID",
+			Type:  String,
+			Value: &types.AttributeValueMemberS{Value: "123"},
 		}).WithSortKey(&DynamoAttr{
-			Name:    "",
-			KeyType: String,
-			Value:   &types.AttributeValueMemberS{Value: ""},
+			Name:  "",
+			Type:  String,
+			Value: &types.AttributeValueMemberS{Value: ""},
 		})
 
 		_, err := builder.BuildGetItemInput()
@@ -250,7 +250,7 @@ func TestBuildBatchGetItemInput(t *testing.T) {
 				{
 					PartitionKey: DynamoAttribute{
 						KeyName: "groupID",
-						KeyType: String,
+						Type:    String,
 						Value:   "123",
 					},
 				},
@@ -262,12 +262,12 @@ func TestBuildBatchGetItemInput(t *testing.T) {
 				{
 					PartitionKey: DynamoAttribute{
 						KeyName: "groupID",
-						KeyType: String,
+						Type:    String,
 						Value:   "123",
 					},
 					SortKey: &DynamoAttribute{
 						KeyName: "ID",
-						KeyType: String,
+						Type:    String,
 						Value:   "123",
 					},
 				},
@@ -279,14 +279,14 @@ func TestBuildBatchGetItemInput(t *testing.T) {
 				{
 					PartitionKey: DynamoAttribute{
 						KeyName: "ID",
-						KeyType: String,
+						Type:    String,
 						Value:   "123",
 					},
 				},
 				{
 					PartitionKey: DynamoAttribute{
 						KeyName: "ID",
-						KeyType: DBKeyType(99), // invalid key type
+						Type:    DBKeyType(99), // invalid key type
 						Value:   "",
 					},
 				},
@@ -338,12 +338,12 @@ func TestBuildScanInput(t *testing.T) {
 			BuildScanInput(nil, filter, &DynamoPrimaryKey{
 				PartitionKey: DynamoAttribute{
 					KeyName: "id",
-					KeyType: String,
+					Type:    String,
 					Value:   "123",
 				},
 				SortKey: &DynamoAttribute{
 					KeyName: "group_id",
-					KeyType: Number,
+					Type:    Number,
 					Value:   1234,
 				},
 			}, 0)
@@ -360,7 +360,7 @@ func TestBuildScanInput(t *testing.T) {
 			BuildScanInput(nil, filter, &DynamoPrimaryKey{
 				PartitionKey: DynamoAttribute{
 					KeyName: "enabled",
-					KeyType: Boolean,
+					Type:    Boolean,
 					Value:   "abc",
 				},
 			}, 0)
@@ -433,7 +433,7 @@ func TestBuildQueryInput(t *testing.T) {
 				&DynamoPrimaryKey{
 					PartitionKey: DynamoAttribute{
 						KeyName: "enabled",
-						KeyType: Boolean,
+						Type:    Boolean,
 						Value:   "abc",
 					},
 				}, 0)

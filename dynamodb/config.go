@@ -5,8 +5,8 @@ type DBIndexName string
 
 // DynamoKeyMetadata the dynamo attribute metadata.
 type DynamoKeyMetadata struct {
-	Name    DBKey
-	KeyType DBKeyType
+	Name DBKey
+	Type DBKeyType
 }
 
 // DBPrimaryKeyNames custom type for dynamo primary key

@@ -13,7 +13,7 @@ import (
 
 func preparePartSortKey(primaryKey DynamoPrimaryKey) (partKey DynamoAttr, sortKey *DynamoAttr, err error) {
 	partKey, err = createDynamoAttribute(string(primaryKey.PartitionKey.KeyName), primaryKey.PartitionKey.Value,
-		primaryKey.PartitionKey.KeyType,
+		primaryKey.PartitionKey.Type,
 	)
 	if err != nil {
 		return
@@ -24,7 +24,7 @@ func preparePartSortKey(primaryKey DynamoPrimaryKey) (partKey DynamoAttr, sortKe
 	}
 
 	sKey, sKerErr := createDynamoAttribute(string(primaryKey.SortKey.KeyName), primaryKey.SortKey.Value,
-		primaryKey.SortKey.KeyType,
+		primaryKey.SortKey.Type,
 	)
 
 	err = sKerErr
@@ -35,7 +35,7 @@ func preparePartSortKey(primaryKey DynamoPrimaryKey) (partKey DynamoAttr, sortKe
 func addPrimaryKey(dbMap map[string]types.AttributeValue, metadata DynamoKeyMetadata) (DynamoAttribute, error) {
 	dynamoAttrib := DynamoAttribute{
 		KeyName: metadata.Name,
-		KeyType: metadata.KeyType,
+		Type:    metadata.Type,
 	}
 	// getting the partition key
 	k, ok := dbMap[strings.ToLower(string(metadata.Name))]
@@ -45,7 +45,7 @@ func addPrimaryKey(dbMap map[string]types.AttributeValue, metadata DynamoKeyMeta
 		return dynamoAttrib, ErrKeyNotFound
 	}
 
-	val, empty := getValueOf(k, metadata.KeyType)
+	val, empty := getValueOf(k, metadata.Type)
 
 	if !empty {
 		dynamoAttrib.Value = val
@@ -64,7 +64,7 @@ func addPrimaryKey(dbMap map[string]types.AttributeValue, metadata DynamoKeyMeta
 }
 
 func initDynamoKeyValue(attribute DynamoKeyMetadata) (types.AttributeValue, interface{}, error) {
-	switch attribute.KeyType {
+	switch attribute.Type {
 	case String:
 		val := uuid.NewString()
 		dynamoValue, err := newDynamoAttributeValue(val, String)
@@ -89,9 +89,9 @@ func createDynamoAttribute(name string, value interface{}, KeyType DBKeyType) (D
 	}
 
 	return DynamoAttr{
-		Name:    string(name),
-		KeyType: KeyType,
-		Value:   dynamoValue,
+		Name:  string(name),
+		Type:  KeyType,
+		Value: dynamoValue,
 	}, nil
 }
 
@@ -164,14 +164,14 @@ func getDynamoAttribute(attributes map[string]types.AttributeValue, meta DynamoK
 		return nil
 	}
 
-	val, empty := getValueOf(attr, meta.KeyType)
+	val, empty := getValueOf(attr, meta.Type)
 	if empty {
 		return nil
 	}
 
 	return &DynamoAttribute{
 		KeyName: meta.Name,
-		KeyType: meta.KeyType,
+		Type:    meta.Type,
 		Value:   val,
 	}
 }
@@ -182,8 +182,8 @@ func extractMetadata(attrib *DynamoAttribute) *DynamoKeyMetadata {
 	}
 
 	return &DynamoKeyMetadata{
-		Name:    attrib.KeyName,
-		KeyType: attrib.KeyType,
+		Name: attrib.KeyName,
+		Type: attrib.Type,
 	}
 }
 

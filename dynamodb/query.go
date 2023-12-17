@@ -11,7 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
-type db[T Entity] struct {
+type DB[T Entity] struct {
 	client DynamoClient
 	conf   DBConfig
 }
@@ -27,7 +27,8 @@ type resp[T Entity] struct {
 	err             error
 }
 
-func (d *db[T]) Find(ctx context.Context, req Request) (Page[T], error) {
+// Find scans or queries items from dynamodb.
+func (d *DB[T]) Find(ctx context.Context, req Request) (Page[T], error) {
 	if req.Size == 0 {
 		return Page[T]{}, nil
 	}
@@ -66,7 +67,8 @@ func (d *db[T]) Find(ctx context.Context, req Request) (Page[T], error) {
 	}, nil
 }
 
-func (d *db[T]) GetItem(ctx context.Context, primaryKey DynamoPrimaryKey) (*T, error) {
+// GetItem retrieves an item.
+func (d *DB[T]) GetItem(ctx context.Context, primaryKey DynamoPrimaryKey) (*T, error) {
 	// prepare the partition and the sort keys
 	partKey, sortKey, err := preparePartSortKey(primaryKey)
 	if err != nil {
@@ -97,7 +99,8 @@ func (d *db[T]) GetItem(ctx context.Context, primaryKey DynamoPrimaryKey) (*T, e
 	return &entity, err
 }
 
-func (d *db[T]) GetItems(ctx context.Context, ids []DynamoPrimaryKey) ([]T, []DynamoPrimaryKey, error) {
+// GetItems retrieves items by their primary keys.
+func (d *DB[T]) GetItems(ctx context.Context, ids []DynamoPrimaryKey) ([]T, []DynamoPrimaryKey, error) {
 	partitions := utils.Partition(ids, 25)
 
 	ch := make(chan resp[T])
@@ -168,7 +171,7 @@ func find(ctx context.Context, client DynamoClient, table string, req Request) (
 	}, err
 }
 
-func (d *db[T]) load(ctx context.Context, wg *sync.WaitGroup, ch chan<- resp[T], ids ...DynamoPrimaryKey) {
+func (d *DB[T]) load(ctx context.Context, wg *sync.WaitGroup, ch chan<- resp[T], ids ...DynamoPrimaryKey) {
 	defer wg.Done()
 
 	// build the batch get item query
@@ -219,7 +222,7 @@ func (d *db[T]) load(ctx context.Context, wg *sync.WaitGroup, ch chan<- resp[T],
 	ch <- res
 }
 
-func (d *db[T]) parse(items []map[string]types.AttributeValue) ([]T, error) {
+func (d *DB[T]) parse(items []map[string]types.AttributeValue) ([]T, error) {
 	// parse response and accumulate returned items
 	data := make([]T, 0, len(items))
 	for _, item := range items {

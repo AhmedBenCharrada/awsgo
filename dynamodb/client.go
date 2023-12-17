@@ -6,7 +6,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 )
 
-// DynamoClient ...
+// DynamoClient defines the dynamodb client.
 //
 //go:generate mockery --name=DynamoClient --structname=DynamoClient --case underscore --output=../mocks/ --filename=dynamo_client.go
 type DynamoClient interface {
@@ -19,10 +19,12 @@ type DynamoClient interface {
 	DeleteItem(ctx context.Context, params *dynamodb.DeleteItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.DeleteItemOutput, error)
 }
 
+// Entity the dynamodb base entity interface.
 type Entity interface {
 	IsEmpty() bool
 }
 
+// Request the find items request.
 type Request struct {
 	Size             int
 	Index            *string
@@ -31,6 +33,7 @@ type Request struct {
 	Conditions       []Criteria
 }
 
+// Page the page response for extracting items with a paginator.
 type Page[T Entity] struct {
 	Items            []T
 	LastEvaluatedKey *DynamoPrimaryKey
@@ -45,7 +48,7 @@ type DynamoPrimaryKey struct {
 // DynamoAttribute represents the data for a dynamodb attribute.
 type DynamoAttribute struct {
 	KeyName DBKey
-	KeyType DBKeyType
+	Type    DBKeyType
 	Value   interface{}
 }
 
@@ -64,32 +67,37 @@ const (
 // DBKey custom type for dynamo DB key name
 type DBKey string
 
+// NewDynamoStringAttrib creates a new dynamodb string attribute.
 func NewDynamoStringAttrib(name, value string) DynamoAttribute {
 	return DynamoAttribute{
 		KeyName: DBKey(name),
-		KeyType: String,
+		Type:    String,
 		Value:   value,
 	}
 }
 
+// NewDynamoNumberAttrib creates a new dynamodb number attribute.
 func NewDynamoNumberAttrib(name, value string) *DynamoAttribute {
 	return &DynamoAttribute{
 		KeyName: DBKey(name),
-		KeyType: Number,
+		Type:    Number,
 		Value:   value,
 	}
 }
 
+// NewDynamoBoolAttrib creates a new dynamodb boolean attribute.
 func NewDynamoBoolAttrib(name string, value bool) DynamoAttribute {
 	return DynamoAttribute{
 		KeyName: DBKey(name),
-		KeyType: Boolean,
+		Type:    Boolean,
 		Value:   value,
 	}
 }
 
-func NewClient[T Entity](client DynamoClient, config DBConfig) *db[T] {
-	return &db[T]{
+// NewClient creates a new dynamodb client wrapper for the entity [Entity].
+// The wrapper offers simplified ways to Create, Update, Delete, Find, GetItem and GetItems for the defined entity.
+func NewClient[T Entity](client DynamoClient, config DBConfig) *DB[T] {
+	return &DB[T]{
 		conf:   config,
 		client: client,
 	}

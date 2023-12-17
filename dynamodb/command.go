@@ -10,7 +10,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
-func (d *db[T]) Create(ctx context.Context, entity T) (DynamoPrimaryKey, error) {
+// Create inserts a new item into dynamodb table.
+func (d *DB[T]) Create(ctx context.Context, entity T) (DynamoPrimaryKey, error) {
 	dbMap, err := attributevalue.Marshal(entity)
 	if err != nil {
 		return DynamoPrimaryKey{}, err
@@ -56,7 +57,8 @@ func (d *db[T]) Create(ctx context.Context, entity T) (DynamoPrimaryKey, error) 
 	}, nil
 }
 
-func (d *db[T]) Update(ctx context.Context, primaryKey DynamoPrimaryKey, values []DynamoAttribute) error {
+// Update updates an item.
+func (d *DB[T]) Update(ctx context.Context, primaryKey DynamoPrimaryKey, values []DynamoAttribute) error {
 	// prepare the partition and the sort keys
 	partKey, sortKey, err := preparePartSortKey(primaryKey)
 	if err != nil {
@@ -81,7 +83,8 @@ func (d *db[T]) Update(ctx context.Context, primaryKey DynamoPrimaryKey, values 
 	return err
 }
 
-func (d *db[T]) Delete(ctx context.Context, primaryKey DynamoPrimaryKey) error {
+// Delete deletes an item.
+func (d *DB[T]) Delete(ctx context.Context, primaryKey DynamoPrimaryKey) error {
 	// prepare the partition and the sort keys
 	partKey, sortKey, err := preparePartSortKey(primaryKey)
 	if err != nil {

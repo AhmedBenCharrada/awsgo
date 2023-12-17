@@ -9,9 +9,9 @@ import (
 
 // DynamoAttr ..
 type DynamoAttr struct {
-	Name    string
-	KeyType DBKeyType
-	Value   types.AttributeValue
+	Name  string
+	Type  DBKeyType
+	Value types.AttributeValue
 }
 
 // IsEmpty checks whether a dynamo-value is nit or empty.
@@ -20,7 +20,7 @@ func (d *DynamoAttr) IsEmpty() bool {
 		return true
 	}
 
-	switch d.KeyType {
+	switch d.Type {
 	case String:
 		s, ok := d.Value.(*types.AttributeValueMemberS)
 		return !ok || s.Value == ""
